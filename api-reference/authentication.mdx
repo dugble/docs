@@ -1,0 +1,66 @@
+---
+title: Authentication
+description: Authenticate requests to the Dugble API with a team token.
+---
+
+Dugble's public API uses **team tokens** for authentication. Team tokens are scoped to a single team and carry an explicit set of permissions.
+
+## Bearer authentication
+
+Send your team token in the `Authorization` header on every API request.
+
+```http
+Authorization: Bearer dgb_team_...
+```
+
+For example:
+
+```bash
+curl https://api.dugble.com/emails \
+  -H "Authorization: Bearer $DUGBLE_API_KEY" \
+  -H "Accept: application/json"
+```
+
+<Note>
+Team token secrets use the `dgb_team_` prefix. Keep them server-side and never expose them in client-side code or public repositories.
+</Note>
+
+## Team scope
+
+A team token is already bound to the team that created it. You do not need to send an `X-Team-ID` header when authenticating with a team token.
+
+## Permissions
+
+Each token has one or more permissions. The Email and SMS API currently uses these permissions:
+
+| Permission | Allows |
+| --- | --- |
+| `email:read` | List and retrieve email messages |
+| `email:send` | Send, schedule, update, and cancel email messages |
+| `sms:read` | List and retrieve SMS messages |
+| `sms:send` | Send, schedule, update, cancel, and synchronize SMS messages |
+
+Use the smallest permission set your integration needs.
+
+## Expiration and revocation
+
+Team tokens can expire and can be revoked. Requests made with an invalid, expired, or revoked token return `401 UNAUTHORIZED`.
+
+A valid token that does not have the permission required by an endpoint returns `403 FORBIDDEN`.
+
+## Example request
+
+```bash
+curl -X POST https://api.dugble.com/emails \
+  -H "Authorization: Bearer $DUGBLE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: welcome-user-42" \
+  -d '{
+    "from": "Dugble <notifications@example.com>",
+    "to": "ada@example.com",
+    "subject": "Welcome",
+    "html": "<p>Welcome to Dugble.</p>"
+  }'
+```
+
+See [Idempotency](/api-reference/idempotency) for guidance on safely retrying mutation requests.
