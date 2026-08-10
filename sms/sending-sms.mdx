@@ -1,0 +1,65 @@
+---
+title: Sending SMS
+description: Send SMS messages with Dugble and understand the core request fields.
+---
+
+Dugble lets you send SMS messages immediately or schedule them for later delivery.
+
+## Basic request
+
+Send an SMS with `POST /sms` and include an idempotency key so retries do not create duplicate messages.
+
+```bash
+curl -X POST https://api.dugble.com/sms \
+  -H "Authorization: Bearer $DUGBLE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: verification-42" \
+  -d '{
+    "to": "+233201234567",
+    "from": "Dugble",
+    "body": "Your verification code is 123456.",
+    "metadata": {
+      "user_id": "user_42"
+    }
+  }'
+```
+
+A successful send request returns `202 Accepted`. This means Dugble accepted the message for asynchronous delivery; it does not mean the handset has received it.
+
+## Recipient numbers
+
+The `to` value must be a supported E.164 phone number, for example:
+
+```text
++233201234567
+```
+
+## Sender
+
+The `from` value must match an approved sender ID available to the authenticated team. Sender IDs can contain up to 11 characters.
+
+See [Sender IDs](/sms/sender-ids) for registration and approval guidance.
+
+## Message body
+
+The `body` field is required and can contain up to 1,600 Unicode characters.
+
+Dugble determines whether the message uses GSM-7 or UCS-2 encoding and calculates the resulting number of SMS segments. The SMS resource exposes this as `segments`.
+
+Longer messages may use multiple billable segments even though they are submitted through one API request.
+
+## Metadata
+
+Use the optional `metadata` field to associate application data with the SMS. It must contain valid JSON.
+
+## Schedule delivery
+
+Set `scheduled_at` when the SMS should be delivered later instead of immediately. See [Schedule SMS](/sms/schedule-sms).
+
+## Send many messages
+
+For up to 50 independent SMS messages in one request, use the batch endpoint. See [Batch Sending](/sms/batch-sending).
+
+## Track delivery
+
+Use the SMS resource and its event history to monitor delivery. See [Delivery Status](/sms/delivery-status) and [SMS Events](/sms/events).

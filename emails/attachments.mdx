@@ -1,0 +1,70 @@
+---
+title: Attachments
+description: Add file attachments and inline assets to emails sent with Dugble.
+---
+
+Dugble supports attachments on individual email sends. Attachment content must be provided as Base64-encoded data.
+
+## Attachment fields
+
+Each attachment can include:
+
+- `filename` — required name shown to the recipient.
+- `content` — required Base64-encoded file content.
+- `content_type` — optional MIME type, such as `application/pdf`.
+- `content_id` — optional identifier for inline content referenced from HTML.
+
+<Warning>
+Attachment paths and remote URLs are not supported. Provide Base64 content directly in the request.
+</Warning>
+
+## Example
+
+```json
+{
+  "from": "Dugble <notifications@example.com>",
+  "to": "ada@example.com",
+  "subject": "Your invoice",
+  "html": "<p>Your invoice is attached.</p>",
+  "attachments": [
+    {
+      "filename": "invoice.pdf",
+      "content": "JVBERi0xLjQK...",
+      "content_type": "application/pdf"
+    }
+  ]
+}
+```
+
+## Size limit
+
+The combined decoded size of all attachments in one email can be up to 7 MB. Dugble rejects requests that exceed this limit.
+
+Base64 increases the size of data on the wire, so account for the encoded payload size when building requests.
+
+## Inline content
+
+Use `content_id` when an attachment should be referenced inside the HTML body, for example for an embedded image.
+
+```html
+<img src="cid:company-logo" alt="Company logo" />
+```
+
+The corresponding attachment uses the same identifier:
+
+```json
+{
+  "filename": "logo.png",
+  "content": "iVBORw0KGgo...",
+  "content_type": "image/png",
+  "content_id": "company-logo"
+}
+```
+
+## Batch sending
+
+<Warning>
+Attachments are not supported by `POST /emails/batch`. Send messages with attachments individually using `POST /emails`.
+</Warning>
+
+For independent messages without attachments, see [Batch Sending](/emails/batch-sending).

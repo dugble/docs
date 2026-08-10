@@ -1,8 +1,48 @@
 ---
-title: Domain verification
-"sidebarTitle": "Verification"
+title: Domain Verification
+sidebarTitle: Verification
+description: Verify a sending domain and understand the DNS records Dugble checks.
 ---
 
-# Domain verification
+Before a domain can be used reliably for sending, its DNS records need to match the verification records returned by Dugble.
 
-Placeholder: Steps and DNS records for domain verification.
+## Add a domain
+
+Create a sending domain first. Dugble provisions the domain with the email provider and returns the verification records that need to be published in DNS.
+
+A domain can move through states including `not_started`, `pending`, `verified`, `partially_verified`, `partially_failed`, `failed`, `temporary_failure`, and `disabled`.
+
+## Publish the DNS records
+
+The domain resource contains a `records` array. Each record includes the record purpose, DNS name, value, type, status, and TTL. Some records can also include a priority.
+
+Publish the records exactly as returned by Dugble. DNS providers often append the zone name automatically, so check how your provider expects host names to be entered.
+
+## Check verification
+
+After publishing the DNS records, request a verification check with:
+
+```http
+POST /domains/{domain_id}/verify
+```
+
+Dugble refreshes the provider and DNS state and returns the updated domain.
+
+<Note>
+DNS changes are not always visible immediately. If verification remains pending, wait for DNS propagation and try again later.
+</Note>
+
+## Verification records
+
+Dugble currently exposes DKIM and SPF verification records on the domain resource.
+
+<CardGroup cols={2}>
+  <Card title="DKIM" href="/domains/dkim">
+    Learn how DKIM authenticates email sent from your domain.
+  </Card>
+  <Card title="SPF" href="/domains/spf">
+    Learn how SPF participates in sender authentication.
+  </Card>
+</CardGroup>
+
+For DMARC policy guidance, see [DMARC](/domains/dmarc).

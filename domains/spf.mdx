@@ -1,7 +1,40 @@
 ---
 title: SPF
+description: Understand the SPF records used by a Dugble sending domain.
 ---
 
-# SPF
+SPF lets receiving mail systems check whether a mail server is authorized to send on behalf of a domain.
 
-Placeholder: Sender Policy Framework (SPF) guidance.
+## SPF records in Dugble
+
+When you create a sending domain, Dugble returns the DNS verification records required by the configured email provider. SPF records appear in the domain's `records` array with `record` set to `SPF`.
+
+A record includes the DNS `name`, `value`, `type`, verification `status`, and `ttl`. Some DNS records can also include a priority.
+
+## Publish the returned record
+
+Add the SPF-related record exactly as returned by Dugble. Do not guess or construct a provider-specific value yourself; the domain resource is the source of truth for the DNS values expected for that domain.
+
+<Note>
+Your DNS provider may display SPF configuration as a TXT or MX-related record depending on the provider setup. Use the `type`, `name`, `value`, and optional `priority` returned by Dugble.
+</Note>
+
+## Verify the domain
+
+After publishing the DNS records, request a fresh verification check:
+
+```http
+POST /domains/{domain_id}/verify
+```
+
+The returned domain shows the current verification state of each record.
+
+## Avoid conflicting SPF configuration
+
+A domain should not publish multiple conflicting SPF policies for the same hostname. If you already use other email services, review the existing DNS configuration before replacing or combining records.
+
+## SPF and DMARC
+
+SPF can participate in DMARC authentication when the authenticated domain aligns with the visible sender domain.
+
+See [Domain Verification](/domains/verification), [DKIM](/domains/dkim), and [DMARC](/domains/dmarc) for the complete domain authentication flow.

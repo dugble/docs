@@ -1,7 +1,42 @@
 ---
 title: DKIM
+description: Configure DomainKeys Identified Mail for a Dugble sending domain.
 ---
 
-# DKIM
+DKIM signs outgoing email so receiving mail systems can verify that a message was authorized by the sending domain and was not modified in transit.
 
-Placeholder: DomainKeys Identified Mail (DKIM) guidance.
+## How Dugble uses DKIM
+
+When you add a sending domain, Dugble provisions the domain with the email provider and returns the DNS verification records required for that domain. DKIM records appear in the domain's `records` array with `record` set to `DKIM`.
+
+Each record includes the DNS `name`, `value`, `type`, verification `status`, and `ttl`.
+
+## Publish every DKIM record
+
+Add each DKIM record to the DNS zone for your domain exactly as returned by Dugble.
+
+<Warning>
+Do not rewrite or shorten the record value. If your DNS provider automatically appends the domain name to the host field, enter only the portion it expects to avoid creating a duplicated domain name.
+</Warning>
+
+## Verify the records
+
+After the records are published, request a domain verification check:
+
+```http
+POST /domains/{domain_id}/verify
+```
+
+Dugble returns the updated domain and the current status of each verification record.
+
+## DNS propagation
+
+DNS updates can take time to propagate. A newly added DKIM record may remain `pending` until the change becomes visible to the provider.
+
+Do not repeatedly delete and recreate records while propagation is in progress. Confirm the host and value first, then allow time for DNS caches to refresh.
+
+## DKIM and DMARC
+
+DKIM is one of the authentication mechanisms DMARC can use to evaluate a message. After your sending domain is verified, configure an appropriate DMARC policy for your domain.
+
+See [Domain Verification](/domains/verification) and [DMARC](/domains/dmarc) for the broader setup flow.

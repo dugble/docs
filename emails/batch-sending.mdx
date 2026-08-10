@@ -1,9 +1,9 @@
 ---
 title: "Batch sending"
-description: "Queue up to 100 independent emails in one atomic API request"
+description: "Queue up to 50 independent emails in one atomic API request"
 ---
 
-The batch endpoint reduces HTTP overhead when your application needs to send multiple independent emails. Submit up to 100 messages to `POST /emails/batch`.
+Use `POST /emails/batch` when your application needs to submit multiple independent emails in one HTTP request. A batch can contain between 1 and 50 messages.
 
 ## Send a batch
 
@@ -12,9 +12,9 @@ The preferred request shape is a top-level JSON array:
 ```bash
 curl --request POST \
   --url https://api.dugble.com/emails/batch \
-  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
   --header "Content-Type: application/json" \
-  --header "Idempotency-Key: <unique-request-key>" \
+  --header "Idempotency-Key: weekly-report-2026-08-10" \
   --data '[
     {
       "to": "ada@example.com",
@@ -35,48 +35,53 @@ For compatibility, Dugble also accepts an object containing `messages`:
 
 ```json
 {
-    "messages": [
-        {
-            "to": "ada@example.com",
-            "subject": "Hello Ada",
-            "text": "Your report is ready."
-        }
-    ]
+  "messages": [
+    {
+      "to": "ada@example.com",
+      "subject": "Hello Ada",
+      "text": "Your report is ready."
+    }
+  ]
 }
 ```
 
 ## Response ordering
 
-A successful request returns `202 Accepted`. Every item in `data` corresponds to the message at the same zero-based index in the request.
+A successful request returns `202 Accepted`. Each item in `data` corresponds to the message at the same zero-based index in the request.
 
 ```json
 {
-    "success": true,
-    "data": [
-        { "id": "ae2014de-c168-4c61-8267-70d2662a1ce1" },
-        { "id": "faccb7a5-8a28-4e9a-ac64-8da1cc3bc1cb" }
-    ]
+  "success": true,
+  "data": [
+    {
+      "object": "email",
+      "id": "ae2014de-c168-4c61-8267-70d2662a1ce1"
+    },
+    {
+      "object": "email",
+      "id": "faccb7a5-8a28-4e9a-ac64-8da1cc3bc1cb"
+    }
+  ]
 }
 ```
 
-Store each returned ID with the application record that produced the corresponding request item.
+Store the returned IDs in the same order as the request items so each application record remains associated with the correct Dugble message.
 
-## Atomic behavior
+## Atomic acceptance
 
-Dugble validates the complete batch before opening its write transaction. It then creates every message and its pending delivery event in one transaction. If any item is invalid or a transactional operation fails, no message in the batch is committed.
+Dugble validates every message before committing the batch. The messages and their durable delivery jobs are then written in one transaction. If validation fails or the transaction cannot complete, none of the messages in the batch are committed.
 
 <Note>
-    Atomic acceptance does not mean every recipient will ultimately receive the
-    email. Each accepted message has its own delivery lifecycle and can later be
-    delivered, delayed, bounced, rejected, or failed independently.
+Atomic acceptance does not mean atomic delivery. After the batch is accepted, each email has its own delivery lifecycle and can be delivered, delayed, bounced, rejected, or failed independently.
 </Note>
 
 ## Limitations
 
-- A batch can contain between 1 and 100 messages.
-- Attachments are not supported by the batch endpoint.
-- Each message must independently satisfy the normal email validation rules.
-- Each message may be sent immediately or have its own `scheduled_at` value.
-- The `Idempotency-Key` applies to the entire HTTP request, not to individual array items.
+- A batch can contain between 1 and 50 emails.
+- Attachments are not supported in batch email requests.
+- Each email must independently satisfy the normal send validation rules.
+- Each email may be immediate or have its own `scheduled_at` value.
+- The `Idempotency-Key` applies to the complete batch request.
+- The combined validated batch payload is limited to 10 MiB.
 
-For messages with attachments, send each email through `POST /emails` instead.
+For emails with attachments, use `POST /emails` for each message instead.

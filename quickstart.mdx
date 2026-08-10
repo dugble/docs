@@ -11,28 +11,27 @@ Before you begin, you need:
 
 - A Dugble account and team
 - A team token with the `email:send` permission
-- A configured sender address
+- A configured and verified sender domain, or a configured default sender
 - `curl` or another HTTP client
 
 <Note>
-  Keep team tokens on your server. Never expose them in browser or mobile
-  application code.
+Keep team tokens on your server. Never expose them in browser or mobile application code.
 </Note>
 
 ## 1. Store your team token
 
 ```bash
-export DUGBLE_TOKEN="replace-with-your-team-token"
+export DUGBLE_API_KEY="replace-with-your-team-token"
 ```
 
 ## 2. Send an email
 
-Use a unique idempotency key for every logical send attempt. Reusing the same key safely prevents accidental duplicate requests.
+Use a unique idempotency key for every logical send. Reusing the same key for a retry prevents the same logical request from being processed twice.
 
 ```bash
 curl --request POST \
   --url https://api.dugble.com/emails \
-  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
   --header "Content-Type: application/json" \
   --header "Idempotency-Key: quickstart-$(date +%s)" \
   --data '{
@@ -43,44 +42,42 @@ curl --request POST \
   }'
 ```
 
-A successful request returns `202 Accepted` with an email ID and a status of `queued`.
+A successful request returns `202 Accepted` with the Dugble message ID:
 
 ```json
 {
   "success": true,
   "data": {
-    "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
-    "to_email": "ada@example.com",
-    "subject": "Hello from Dugble",
-    "status": "queued"
+    "object": "email",
+    "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794"
   }
 }
 ```
 
-`queued` means Dugble accepted the message for asynchronous delivery. It does not mean the recipient's mail server has delivered it yet.
+`202 Accepted` means Dugble accepted the message for asynchronous delivery. It does not mean the recipient's mail server has delivered it.
 
 ## 3. Check delivery status
 
-Use the returned email ID:
+Use the returned message ID:
 
 ```bash
 curl --request GET \
   --url https://api.dugble.com/emails/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794 \
-  --header "Authorization: Bearer $DUGBLE_TOKEN"
+  --header "Authorization: Bearer $DUGBLE_API_KEY"
 ```
 
-The message lifecycle may include `queued`, `processing`, `submitted`, `delivered`, `delayed`, `bounced`, `complained`, `rejected`, `failed`, or `canceled`.
+The retrieve response exposes the latest delivery state through `last_event`. The lifecycle can include `queued`, `processing`, `submitted`, `delivered`, `delayed`, `bounced`, `complained`, `rejected`, `failed`, or `canceled`.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Email API" icon="envelope" href="/emails/introduction">
-    Learn about recipients, content, scheduling, batches, headers, and message status.
+  <Card title="Email" icon="envelope" href="/emails/introduction">
+    Learn about recipients, content, scheduling, batches, headers, and delivery status.
   </Card>
-  <Card title="Webhooks" icon="webhook" href="/webhooks/introduction">
-    Receive signed lifecycle events instead of polling message status.
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn how team tokens and permissions protect API requests.
   </Card>
-  <Card title="SMS API" icon="message-sms" href="/sms/introduction">
+  <Card title="SMS" icon="message-sms" href="/sms/introduction">
     Send transactional SMS using the same team-token model.
   </Card>
   <Card title="Sender domains" icon="globe" href="/domains/introduction">
@@ -89,5 +86,5 @@ The message lifecycle may include `queued`, `processing`, `submitted`, `delivere
 </CardGroup>
 
 <Tip>
-  Need help? Contact [support@dugble.com](mailto:support@dugble.com).
+Need help? Contact [support@dugble.com](mailto:support@dugble.com).
 </Tip>

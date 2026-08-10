@@ -1,7 +1,42 @@
 ---
-title: SMS events
+title: SMS Events
+description: Inspect the delivery event history for an SMS message.
 ---
 
-# SMS events
+Dugble records delivery events as an SMS moves through the sending pipeline and the downstream provider reports delivery outcomes.
 
-Placeholder: Events related to SMS message lifecycle.
+## List message events
+
+Retrieve events for a message with:
+
+```http
+GET /sms/{message_id}/events
+```
+
+For example:
+
+```bash
+curl https://api.dugble.com/sms/$MESSAGE_ID/events \
+  -H "Authorization: Bearer $DUGBLE_API_KEY" \
+  -H "Accept: application/json"
+```
+
+## Event data
+
+An event can include a unique event ID, event type, occurrence time, provider, and optional code or message.
+
+## Events and message status
+
+The SMS resource exposes `last_event` as the latest known state. Use the event list when you need the delivery history behind that state.
+
+Common SMS states include `queued`, `processing`, `submitted`, `sent`, `delivered`, `undelivered`, `rejected`, `failed`, `expired`, `unknown`, and `canceled`.
+
+## Refresh provider status
+
+When you need the latest state directly from the provider, Dugble also exposes a status synchronization operation for an SMS message.
+
+## Real-time processing
+
+For applications that need to react automatically to delivery changes, use webhooks instead of repeatedly polling message events.
+
+See [Webhooks](/webhooks/introduction) for event delivery to your application.

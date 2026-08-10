@@ -1,7 +1,40 @@
 ---
-title: Email events
+title: Email Events
+description: Inspect the delivery event history for an email message.
 ---
 
-# Email events
+Dugble records delivery events as an email moves through the sending pipeline. Events are useful for troubleshooting delivery and understanding how the latest message status was reached.
 
-Placeholder: Events related to email message lifecycle.
+## List message events
+
+Retrieve events for a message with:
+
+```http
+GET /emails/{message_id}/events
+```
+
+For example:
+
+```bash
+curl https://api.dugble.com/emails/$MESSAGE_ID/events \
+  -H "Authorization: Bearer $DUGBLE_API_KEY" \
+  -H "Accept: application/json"
+```
+
+The response contains the events associated with that message.
+
+## Event data
+
+An event can include a unique event ID, event type, occurrence time, provider, and optional code or message.
+
+## Events and message status
+
+The email resource exposes `last_event` as the latest known state. Use the event list when you need the history behind that state.
+
+For example, a message may move from `queued` to `processing`, then `submitted`, and finally `delivered`.
+
+## Real-time processing
+
+If your application needs to react automatically to delivery changes, use webhooks instead of continuously polling message events.
+
+See [Webhooks](/webhooks/introduction) for event delivery to your application.
