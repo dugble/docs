@@ -1,9 +1,9 @@
 ---
 title: "Schedule SMS"
-description: "Send an SMS later, change its delivery time, or cancel it"
+description: "Send SMS later, change its delivery time, or cancel it"
 ---
 
-Set `scheduled_at` to queue an SMS now while delaying its delivery job until a future time.
+Set `scheduled_at` to create an SMS now and release it for delivery at a future time.
 
 ## Schedule a message
 
@@ -12,31 +12,39 @@ For a new send, `scheduled_at` accepts an ISO 8601 timestamp or a relative value
 ```bash
 curl --request POST \
   --url https://api.dugble.com/sms \
-  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
   --header "Content-Type: application/json" \
-  --header "Idempotency-Key: <unique-request-key>" \
+  --header "Idempotency-Key: appointment-sms-42" \
   --data '{
     "to": "+233201234567",
     "from": "Dugble",
     "body": "Your appointment starts in one hour.",
-    "scheduled_at": "2026-08-05T11:52:01.858Z"
+    "scheduled_at": "2026-08-12T09:00:00Z"
   }'
+```
+
+Relative scheduling is also supported:
+
+```json
+{
+  "scheduled_at": "in 30 min"
+}
 ```
 
 Supported relative units include seconds, minutes, hours, and days. The resolved delivery time must be at least 30 seconds in the future.
 
-## Update the delivery time
+## Reschedule an SMS
 
-Use `PATCH /sms/{message_id}` while the message remains queued and outside the delivery cutoff. Updates require an ISO 8601 timestamp; relative values are not accepted.
+Use `PATCH /sms/{message_id}` while the SMS is still queued and outside the final mutation cutoff. Rescheduling requires an ISO 8601 timestamp; relative values are not accepted.
 
 ```bash
 curl --request PATCH \
   --url https://api.dugble.com/sms/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794 \
-  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
   --header "Content-Type: application/json" \
-  --header "Idempotency-Key: <unique-request-key>" \
+  --header "Idempotency-Key: appointment-sms-42-reschedule" \
   --data '{
-    "scheduled_at": "2026-08-05T13:00:00Z"
+    "scheduled_at": "2026-08-12T11:00:00Z"
   }'
 ```
 
@@ -45,21 +53,18 @@ curl --request PATCH \
 ```bash
 curl --request POST \
   --url https://api.dugble.com/sms/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794/cancel \
-  --header "Authorization: Bearer $DUGBLE_TOKEN" \
-  --header "Idempotency-Key: <unique-request-key>"
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --header "Idempotency-Key: appointment-sms-42-cancel"
 ```
-
-Dugble changes the SMS state to `canceled` and removes its pending delivery event in the same database transaction.
 
 ## Scheduling rules
 
 - Initial schedules must be at least 30 seconds in the future.
 - Rescheduling and cancellation are blocked during the final 15 seconds before delivery.
 - Only queued messages with a future `scheduled_at` value can be changed or canceled.
-- Processing, submitted, delivered, failed, and already canceled messages cannot be changed.
-- Use a unique `Idempotency-Key` for every distinct mutation.
+- Messages that have already begun processing cannot be changed.
+- Use a distinct `Idempotency-Key` for each distinct scheduling mutation.
 
 <Warning>
-    Schedule time is not a delivery guarantee. Provider and carrier processing
-    can add latency after Dugble releases the message for delivery.
+The scheduled time controls when Dugble releases the SMS for delivery. Provider and carrier processing can add latency after that point.
 </Warning>
