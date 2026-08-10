@@ -1,29 +1,40 @@
 ---
 title: "Introduction"
-description: "Developer-first email and SMS API for African startups and teams"
+description: "Developer-first email and SMS infrastructure for African startups and teams"
 ---
 
-Dugble is a developer-first email and SMS API for African startups and teams. It is designed to be simple, reliable, and scalable, allowing developers to send transactional and marketing messages with ease.
+Dugble provides APIs for transactional email and SMS, with additional messaging workflows for audiences, broadcasts, domains, sender identities, and delivery tracking.
 
 <CardGroup cols={2}>
-    <Card title="Email API" icon="envelope">
-        Send transactional and marketing email through a straightforward API
-        built for developer workflows.
-    </Card>
-    <Card title="SMS API" icon="message-sms">
-        Reach customers with SMS messaging flows designed for African teams and
-        startups.
-    </Card>
-    <Card title="Reliable delivery" icon="shield-check">
-        Build customer notifications on messaging infrastructure designed for
-        dependable delivery.
-    </Card>
-    <Card title="Scalable workflows" icon="chart-line-up">
-        Start with simple sends and grow into higher-volume transactional and
-        marketing messaging.
-    </Card>
+  <Card title="Email" icon="envelope" href="/emails/introduction">
+    Send transactional email, schedule delivery, attach files, and inspect message events.
+  </Card>
+  <Card title="SMS" icon="message-sms" href="/sms/introduction">
+    Send SMS, manage sender IDs, schedule messages, and track carrier outcomes.
+  </Card>
+  <Card title="Sender domains" icon="globe" href="/domains/introduction">
+    Authenticate the domains used for outbound email with DKIM and SPF.
+  </Card>
+  <Card title="API Reference" icon="square-terminal" href="/api-reference/introduction">
+    Explore request fields, responses, errors, and endpoint-level behavior.
+  </Card>
 </CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-    Send your first Dugble message from the API.
-</Card>
+## Start with a server-to-server integration
+
+Dugble authenticates public API requests with team tokens. Keep tokens on your server and grant only the permissions your integration needs.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Send your first transactional email and retrieve its delivery state.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn how team tokens, permissions, rotation, and revocation work.
+  </Card>
+</CardGroup>
+
+## Asynchronous delivery
+
+Email and SMS send requests are accepted asynchronously. A successful `202 Accepted` response means Dugble queued the message for delivery; it does not mean the recipient has received it yet.
+
+Use message retrieval, delivery events, and supported webhook workflows to observe what happens after acceptance.
