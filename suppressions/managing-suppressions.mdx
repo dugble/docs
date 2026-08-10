@@ -1,0 +1,58 @@
+---
+title: Managing Suppressions
+description: Create, inspect, filter, and remove suppressed email addresses.
+---
+
+Use suppressions when an email address should no longer receive email from your team.
+
+## Create a suppression
+
+```bash
+curl --request POST \
+  --url https://api.dugble.com/suppressions \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "email": "ada@example.com"
+  }'
+```
+
+Manual suppressions are stored with origin `manual`. Adding an address that is already suppressed returns `409 Conflict`.
+
+## List suppressions
+
+```http
+GET /suppressions?limit=20
+```
+
+The public suppression list uses cursor pagination. Use `after` or `before` to continue through the list.
+
+You can also filter by origin:
+
+```http
+GET /suppressions?origin=bounce
+```
+
+Supported origins are `bounce`, `complaint`, and `manual`.
+
+## Retrieve a suppression
+
+You can use either the suppression UUID or the email address:
+
+```http
+GET /suppressions/ada@example.com
+```
+
+## Remove a suppression
+
+The delete operation also accepts either form:
+
+```http
+DELETE /suppressions/ada@example.com
+```
+
+Removing a suppression makes the address eligible for future sends only if no other consent, unsubscribe, or audience rule blocks delivery.
+
+<Warning>
+Do not remove bounce or complaint suppressions automatically just to force another delivery attempt. Investigate why the address was suppressed first.
+</Warning>
