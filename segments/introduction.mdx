@@ -1,7 +1,43 @@
 ---
-title: Segments introduction
+title: Segments
+description: Group contacts into reusable audiences for targeting and messaging workflows.
 ---
 
-# Segments
+Segments are named collections of contacts. Use them to build reusable audiences that can be referenced by higher-level messaging features such as broadcasts and campaigns.
 
-Placeholder: Introduction to segments.
+## Create a segment
+
+A segment currently requires only a name:
+
+```bash
+curl --request POST \
+  --url https://api.dugble.com/segments \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "Pro customers"
+  }'
+```
+
+## Membership is managed through contacts
+
+Adding and removing contacts is done through the contact-segment membership endpoints:
+
+```http
+POST /contacts/{contact_id}/segments/{segment_id}
+DELETE /contacts/{contact_id}/segments/{segment_id}
+```
+
+Adding a contact that is already a member is safe: the API returns the existing membership rather than creating a duplicate.
+
+## Inspect a segment
+
+Use `GET /segments/{segment_id}/contacts` to list the contacts currently assigned to a segment.
+
+<Note>
+Segments are explicit membership groups. Topic subscriptions are a separate preference model and should not be treated as interchangeable with segment membership.
+</Note>
+
+<Card title="Managing membership" href="/segments/managing-membership">
+  Add contacts, remove contacts, and inspect segment membership.
+</Card>
