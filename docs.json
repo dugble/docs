@@ -58,6 +58,17 @@
             ]
           },
           {
+            "group": "Audiences",
+            "pages": [
+              "audiences/overview",
+              "audiences/contacts",
+              "audiences/topics",
+              "audiences/subscriptions",
+              "audiences/segments",
+              "audiences/suppressions"
+            ]
+          },
+          {
             "group": "Webhooks",
             "pages": [
               "webhooks/introduction",

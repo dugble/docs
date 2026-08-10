@@ -1,0 +1,37 @@
+---
+title: Topics
+description: Organize communication into categories that contacts can subscribe to or opt out of.
+---
+
+Topics represent categories of communication, such as product updates, newsletters, security notices, or account announcements.
+
+They give your team a stable preference model without tying those preferences to a specific campaign or broadcast.
+
+## Topic settings
+
+Each topic has:
+
+- a name,
+- an optional description,
+- a `default_subscription` of `opt_in` or `opt_out`,
+- a visibility of `public` or `private`.
+
+The default subscription determines the starting preference for contacts that do not yet have an explicit subscription for that topic.
+
+## Public and private topics
+
+Visibility describes how a topic is intended to be exposed in preference experiences.
+
+Use public topics for preferences that customers may be allowed to manage themselves. Use private topics for internal or application-controlled categories that should not appear as normal customer-facing choices.
+
+## Topics are not segments
+
+Topics describe **what kind of communication** a contact wants to receive. Segments describe **which contacts belong to a target audience**.
+
+A contact can be in a segment and still be opted out of the relevant topic. That distinction becomes important when determining final delivery eligibility.
+
+## Changing a topic
+
+A topic's name, description, and visibility can change over time. Its `default_subscription` is part of the topic's preference model and should be chosen deliberately when the topic is created.
+
+For endpoint details, request fields, and responses, see the Topics section in the API Reference.

@@ -1,0 +1,44 @@
+---
+title: Contacts
+description: Understand contact identity, profile data, consent, and audience relationships.
+---
+
+A contact is a recipient profile that belongs to your Dugble team. Contacts give you a durable place to store identity, profile data, and messaging preferences that can be reused across audience workflows.
+
+## Contact identity
+
+Every contact has an email address. A contact can also include a phone number, first and last name, and application-specific properties.
+
+When a phone number is provided, Dugble validates it as an international number and stores normalized phone and country information alongside the contact.
+
+## Custom properties
+
+Use custom properties for application-specific data such as plan, customer ID, company, or lifecycle stage.
+
+Property keys are defined separately for the team and have a declared type. Dugble validates contact property values against those definitions before storing them.
+
+<Note>
+Updating a contact's `properties` replaces the stored property object with the supplied object rather than merging individual keys automatically.
+</Note>
+
+## Email unsubscribe and SMS consent
+
+Dugble keeps email unsubscribe state and SMS consent separate because they represent different communication decisions.
+
+For SMS, a contact can be `unknown`, `opted_in`, or `opted_out`. Explicit consent states also record a source such as `api`, `import`, or `manual`.
+
+For email, the contact's `unsubscribed` field represents its general email unsubscribe state. Topic subscriptions add another, more specific preference layer.
+
+## Contacts and audiences
+
+Contacts can:
+
+- belong to one or more segments,
+- have a subscription state for multiple topics,
+- be excluded from email delivery by suppression rules.
+
+This separation lets you target a segment without treating membership as consent.
+
+## API details
+
+For creating, retrieving, updating, deleting, or listing contacts, see the Contacts section in the API Reference.

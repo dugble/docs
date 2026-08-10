@@ -1,0 +1,43 @@
+---
+title: Audiences
+description: Understand how contacts, topics, subscriptions, segments, and suppressions work together.
+---
+
+Audiences are the people your team can communicate with and the rules that determine who should receive a message.
+
+Dugble separates audience data into a few simple concepts so identity, preferences, targeting, and delivery restrictions remain independent.
+
+## How the pieces fit together
+
+- **Contacts** represent individual recipients and their profile data.
+- **Topics** represent categories of communication such as product updates or account notices.
+- **Subscriptions** record whether a contact is opted in or opted out of a topic.
+- **Segments** group contacts into explicit audiences for targeting.
+- **Suppressions** prevent email delivery to addresses that should not receive mail.
+
+A contact can belong to multiple segments and have different subscription preferences for different topics. Suppressions are evaluated separately and can make an otherwise eligible recipient ineligible for email delivery.
+
+## Preferences and targeting are different
+
+Topics and subscriptions answer **what a contact wants to receive**. Segments answer **which contacts you want to target**.
+
+Keeping these concepts separate makes it possible to select a broad audience while still respecting individual preferences and delivery restrictions.
+
+## Audience eligibility
+
+When a bulk message is prepared, the selected audience is only the starting point. Eligibility can also depend on topic preferences, unsubscribe state, suppressions, and other channel-specific rules.
+
+<CardGroup cols={2}>
+  <Card title="Contacts" href="/audiences/contacts">
+    Learn how recipient identity and profile data are represented.
+  </Card>
+  <Card title="Topics" href="/audiences/topics">
+    Organize communication into preference categories.
+  </Card>
+  <Card title="Subscriptions" href="/audiences/subscriptions">
+    Understand topic defaults and contact-level preferences.
+  </Card>
+  <Card title="Segments" href="/audiences/segments">
+    Build explicit groups of contacts for targeting.
+  </Card>
+</CardGroup>
