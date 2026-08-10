@@ -1,0 +1,51 @@
+---
+title: Delivery Status
+description: Understand the lifecycle and delivery states of emails sent with Dugble.
+---
+
+Email delivery is asynchronous. After Dugble accepts a message, its status changes as the message moves through the delivery pipeline and the receiving mail system responds.
+
+## Common states
+
+Dugble email messages can report states such as:
+
+| Status | Meaning |
+| --- | --- |
+| `queued` | The message has been accepted and is waiting for processing. |
+| `processing` | Dugble is preparing the message for delivery. |
+| `submitted` | The message has been submitted to the email provider. |
+| `delivered` | The receiving mail system accepted the message. |
+| `delayed` | Delivery has been temporarily delayed. |
+| `bounced` | The receiving mail system rejected the message. |
+| `complained` | A complaint was reported for the message. |
+| `rejected` | The message was rejected before successful delivery. |
+| `failed` | Delivery failed. |
+| `canceled` | A scheduled message was canceled before delivery. |
+
+## Retrieve the current state
+
+Retrieve a message with `GET /emails/{message_id}`. The `last_event` field represents the latest known delivery state.
+
+```json
+{
+  "success": true,
+  "data": {
+    "object": "email",
+    "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
+    "subject": "Welcome",
+    "last_event": "delivered"
+  }
+}
+```
+
+## Delivery does not mean inbox placement
+
+A `delivered` event means the recipient's mail system accepted the message. It does not guarantee that the message was placed in the inbox rather than another folder.
+
+## Inspect the event history
+
+For more detail, retrieve the message's delivery events with `GET /emails/{message_id}/events`. See [Email Events](/emails/events).
+
+## React to failures
+
+Use delivery events and webhooks to monitor bounces, complaints, delays, and failures. Avoid repeatedly sending to addresses that are known to be invalid or suppressed.
