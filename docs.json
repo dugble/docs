@@ -163,7 +163,6 @@
           },
           {
             "group": "Contact Properties",
-            "openapi": "/openapi-contact-properties.json",
             "pages": [
               "POST /contact-properties",
               "GET /contact-properties",
