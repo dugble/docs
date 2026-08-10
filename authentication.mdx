@@ -1,7 +1,44 @@
 ---
 title: Authentication
+description: Learn how to authenticate requests to the Dugble API with team tokens.
 ---
 
-# Authentication
+Dugble uses **team tokens** to authenticate server-to-server API requests. A team token is scoped to the team that created it and carries an explicit set of permissions.
 
-Placeholder: Authentication details to be added.
+## Send a bearer token
+
+Include your token in the `Authorization` header on every API request:
+
+```http
+Authorization: Bearer dgb_team_...
+```
+
+For example:
+
+```bash
+curl https://api.dugble.com/emails \
+  -H "Authorization: Bearer $DUGBLE_API_KEY" \
+  -H "Accept: application/json"
+```
+
+<Note>
+Team token secrets use the `dgb_team_` prefix. Store them on your server and never expose them in browser code, mobile apps, or public repositories.
+</Note>
+
+## Team scope
+
+A team token is already bound to the team that created it. You do not need to provide a separate team identifier when using a team token.
+
+## Permissions
+
+Tokens should be granted only the permissions your integration needs. If a token is valid but does not have the permission required by an endpoint, Dugble returns `403 FORBIDDEN`.
+
+## Invalid or expired tokens
+
+Requests made with a missing, invalid, expired, or revoked token return `401 UNAUTHORIZED`.
+
+## Rotate and revoke tokens
+
+Treat team tokens like passwords. Rotate credentials when they may have been exposed, and revoke credentials that are no longer used by an integration.
+
+For endpoint-level authentication details, see the [API Reference](/api-reference/introduction).
