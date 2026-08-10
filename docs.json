@@ -58,35 +58,14 @@
             ]
           },
           {
-            "group": "Contacts",
+            "group": "Audiences",
             "pages": [
-              "contacts/introduction",
-              "contacts/managing-contacts",
-              "contacts/properties-and-consent",
-              "contacts/subscriptions"
-            ]
-          },
-          {
-            "group": "Topics",
-            "pages": [
-              "topics/introduction",
-              "topics/managing-topics"
-            ]
-          },
-          {
-            "group": "Segments",
-            "pages": [
-              "segments/introduction",
-              "segments/managing-segments",
-              "segments/managing-membership"
-            ]
-          },
-          {
-            "group": "Suppressions",
-            "pages": [
-              "suppressions/introduction",
-              "suppressions/managing-suppressions",
-              "suppressions/batch-operations"
+              "audiences/overview",
+              "audiences/contacts",
+              "audiences/topics",
+              "audiences/subscriptions",
+              "audiences/segments",
+              "audiences/suppressions"
             ]
           },
           {
