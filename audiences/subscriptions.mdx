@@ -1,0 +1,42 @@
+---
+title: Subscriptions
+description: Understand topic defaults and contact-level opt-in or opt-out preferences.
+---
+
+Subscriptions represent a contact's preference for a topic. They let the same contact opt into one category of communication while opting out of another.
+
+## Default subscription
+
+Every topic has a `default_subscription` of `opt_in` or `opt_out`.
+
+That default applies when a contact has not recorded an explicit preference for the topic. Once the contact has a topic-specific subscription, the explicit value becomes the contact's effective preference.
+
+## Contact-level preferences
+
+A contact subscription can be:
+
+- `opt_in`
+- `opt_out`
+
+These preferences are stored per contact and per topic, so changing one topic does not affect the contact's preferences for other topics.
+
+## Subscription is not segment membership
+
+A subscription answers whether the contact wants a category of communication. Segment membership answers whether the contact is part of a target group.
+
+A recipient can therefore be selected by a segment but still be ineligible for a topic because they are opted out.
+
+## Subscription is not global unsubscribe
+
+Topic subscriptions are also separate from a contact's general email `unsubscribed` state and from SMS consent.
+
+Think of the layers this way:
+
+- `unsubscribed` controls broad email eligibility,
+- topic subscriptions control category-level preferences,
+- SMS consent controls SMS permission,
+- segments control targeting.
+
+## API details
+
+For listing or updating a contact's topic subscriptions, see the Contacts API Reference.
