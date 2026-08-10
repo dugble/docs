@@ -1,0 +1,78 @@
+---
+title: "Custom headers"
+description: "Add application-specific headers to an outgoing email"
+---
+
+Use the `headers` object to attach custom RFC 5322 headers to an email. Custom headers are useful for correlating a message with an entity in your application or passing provider-supported metadata.
+
+## Add custom headers
+
+```bash
+curl --request POST \
+  --url https://api.dugble.com/emails \
+  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "to": "ada@example.com",
+    "subject": "Your receipt",
+    "html": "<p>Your receipt is attached to order #1234.</p>",
+    "headers": {
+      "X-Entity-Ref-ID": "order-1234",
+      "X-Campaign-Source": "receipt-flow"
+    }
+  }'
+```
+
+## Requirements
+
+- A message may include up to 100 custom headers.
+- Header names cannot be empty.
+- Header names and values cannot contain carriage returns or line feeds.
+- The `headers` value must be a JSON object whose values are strings.
+
+Dugble rejects the entire request when a custom header is invalid.
+
+<Warning>
+    Do not place secrets or sensitive personal data in headers. Headers can be
+    recorded by mail servers and provider logs.
+</Warning>
+
+## Use stable names
+
+Prefix application-specific headers with `X-` and use a stable, descriptive name:
+
+```json
+{
+    "headers": {
+        "X-Entity-Ref-ID": "invoice-9f74",
+        "X-Environment": "production"
+    }
+}
+```
+
+Avoid using custom headers to replace standard message fields such as `From`, `To`, `Subject`, or `Reply-To`. Set those values through their corresponding API fields instead.
+
+## Batch sends
+
+Custom headers are supported on each message in a batch:
+
+```json
+[
+    {
+        "to": "ada@example.com",
+        "subject": "Your weekly report",
+        "text": "Your report is ready.",
+        "headers": {
+            "X-Entity-Ref-ID": "report-ada-30"
+        }
+    },
+    {
+        "to": "grace@example.com",
+        "subject": "Your weekly report",
+        "text": "Your report is ready.",
+        "headers": {
+            "X-Entity-Ref-ID": "report-grace-30"
+        }
+    }
+]
+```

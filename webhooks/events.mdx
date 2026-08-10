@@ -1,0 +1,150 @@
+---
+title: "Webhook events"
+description: "Understand the outgoing Email, SMS, and Verify lifecycle event catalog"
+---
+
+<Warning>
+    Outgoing webhooks are currently a preview. The catalog below is the
+    complete set of events that endpoints can subscribe to during the preview.
+</Warning>
+
+Event types use a resource and lifecycle name, such as `email.delivered`,
+`sms.delivered`, or `verification.approved`.
+
+## Common envelope
+
+The envelope includes a UUID event ID, an event type, the time the lifecycle
+transition occurred, and a snapshot of the affected resource:
+
+```json
+{
+    "id": "7fccf29e-d21e-4bc9-85a3-a4ec9c35a8dd",
+    "type": "email.bounced",
+    "occurred_at": "2026-07-31T12:01:10Z",
+    "data": {
+        "object": "email",
+        "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
+        "status": "partially_failed",
+        "provider": "ses",
+        "provider_event_id": "769af168-5a9d-5b30-a35f-4857f81fbf02",
+        "provider_message_id": "0100018f-example",
+        "last_event": "bounce",
+        "recipients": ["recipient@example.com"],
+        "recipient_details": [
+            {
+                "email": "recipient@example.com",
+                "status": "bounced",
+                "action": "failed",
+                "status_code": "5.1.1",
+                "diagnostic_code": "smtp; 550 user unknown"
+            }
+        ],
+        "diagnostics": {
+            "bounce_type": "Permanent",
+            "bounce_sub_type": "General",
+            "reporting_mta": "dsn; mx.example.com",
+            "remote_mta_ip_address": "192.0.2.10"
+        }
+    }
+}
+```
+
+Treat unknown fields and event types as forward-compatible additions. Do not fail an entire endpoint because it receives an event your application does not use.
+
+## SMS events
+
+| Event             | Meaning                                      | Suggested action                                            |
+| ----------------- | -------------------------------------------- | ----------------------------------------------------------- |
+| `sms.submitted`   | The provider accepted the SMS.               | Mark the message submitted.                                 |
+| `sms.sent`        | The provider reported that the SMS was sent. | Continue waiting for final delivery when supported.         |
+| `sms.delivered`   | The provider reported delivery.              | Mark the notification delivered.                            |
+| `sms.undelivered` | The provider could not deliver the SMS.      | Verify the destination number before retrying.              |
+| `sms.failed`      | Dugble could not complete delivery.          | Record the failure for operational review.                  |
+
+## Email events
+
+| Event                                | Meaning                                                   | Suggested action                                      |
+| ------------------------------------ | --------------------------------------------------------- | ----------------------------------------------------- |
+| `email.submitted`                    | SES accepted the email for delivery.                      | Mark the message submitted and await final outcomes.  |
+| `email.delivered`                    | SES delivered the email to the listed recipients.         | Mark those recipients delivered.                      |
+| `email.delayed`                      | SES reported a temporary delivery delay.                  | Keep waiting or surface a delayed state.              |
+| `email.bounced`                      | SES reported a bounce for the listed recipients.          | Suppress permanent failures before retrying.          |
+| `email.complained`                   | A recipient reported the email as spam.                   | Suppress the recipient and investigate the campaign.  |
+| `email.rejected`                     | SES rejected the email before delivery.                   | Correct the message or sender configuration.          |
+| `email.failed`                       | SES could not render or otherwise send the email.         | Record the failure for operational review.            |
+| `email.opened`                       | SES recorded an open-tracking event.                      | Update engagement analytics without changing delivery.|
+| `email.clicked`                      | SES recorded a tracked-link click.                        | Update engagement analytics and campaign attribution. |
+| `email.subscription_changed`         | SES recorded a contact-list subscription preference change.| Synchronize the recipient's subscription preferences. |
+
+Email events include the affected recipient list from the provider event. A single
+email can therefore produce different lifecycle events for different recipients.
+
+The `status` field is the current aggregate email status after applying the provider
+event. Engagement and subscription events do not change delivery status.
+`provider_event_id` identifies the durable normalized provider event that caused
+the webhook.
+
+`diagnostics` contains event-level SES details when available, including:
+
+- bounce type and subtype
+- complaint feedback type, feedback ID, and user agent
+- delivery SMTP response, reporting MTA, remote MTA IP, and processing time
+- delivery-delay type and expiration time
+- rejection or rendering-failure reason
+- open and click IP address and user agent
+- clicked URL and link tags
+- contact-list subscription source and old/new topic preferences
+
+`recipient_details` contains the current state for each affected recipient. Bounce
+and delay events can include SMTP `action`, enhanced status code, and diagnostic
+text. Fields that SES did not provide are omitted.
+
+## Verify events
+
+| Event                               | Meaning                                                  | Suggested action                                       |
+| ----------------------------------- | -------------------------------------------------------- | ------------------------------------------------------ |
+| `verification.created`              | A verification and its first challenge were created.    | Store the verification ID and wait for user input.     |
+| `verification.dispatched`           | The challenge was handed to Email or SMS delivery.       | Surface that the code was sent.                        |
+| `verification.approved`             | The submitted code matched the active challenge.         | Complete the protected action exactly once.            |
+| `verification.incorrect`            | A submitted code did not match.                          | Keep the session pending unless attempts are exhausted.|
+| `verification.resent`               | A new challenge replaced the previous challenge.        | Discard any previously entered code.                   |
+| `verification.expired`              | The verification or active challenge expired.            | Start a new verification when the user retries.        |
+| `verification.delivery_failed`      | Dugble could not deliver the active challenge.           | Offer another channel or begin a new session.          |
+| `verification.max_attempts_reached` | The configured number of attempts was exhausted.         | Require a new verification session.                    |
+| `verification.canceled`             | The pending verification was canceled.                   | Stop accepting codes for the verification ID.          |
+
+Verify event data is a snapshot of the verification resource. It never contains
+the plaintext code, the stored HMAC, or the encrypted dispatch value.
+
+## Test events
+
+Sending a test from an endpoint creates a `webhook.test` event for that endpoint.
+It uses the common envelope but is not a subscribable lifecycle event.
+
+## Delivery headers and signature
+
+Each request includes:
+
+- `X-Dugble-Event`: event type
+- `X-Dugble-Event-Id`: stable event UUID
+- `X-Dugble-Delivery-Id`: UUID for this endpoint delivery
+- `X-Dugble-Signature`: timestamped HMAC signature
+
+The signature has the form `t=<unix_timestamp>,v1=<hex_digest>`. Compute the
+expected digest with HMAC-SHA256, using the endpoint signing secret as the key
+and `<unix_timestamp>.<raw_request_body>` as the signed bytes. Compare digests
+with a constant-time function and reject timestamps outside your tolerance.
+
+<Card title="Signature verification" icon="key" href="/webhooks/signatures">
+    Follow the complete signing contract and verification examples.
+</Card>
+
+## Idempotent handling
+
+Your endpoint should:
+
+1. Verify the webhook signature against the raw request body.
+2. Store the event ID with a unique constraint.
+3. Acknowledge duplicate IDs without repeating side effects.
+4. Queue application work and respond quickly.
+5. Log unknown event types rather than returning an error.

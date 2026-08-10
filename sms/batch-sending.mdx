@@ -1,0 +1,90 @@
+---
+title: "Batch sending"
+description: "Atomically queue up to 100 SMS messages"
+---
+
+Use `POST /sms/batch` to submit multiple independent SMS messages in one HTTP request. The endpoint accepts between 1 and 100 messages.
+
+## Send a batch
+
+The preferred request shape is a top-level JSON array:
+
+```bash
+curl --request POST \
+  --url https://api.dugble.com/sms/batch \
+  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: <unique-request-key>" \
+  --data '[
+    {
+      "to": "+233201234567",
+      "from": "Dugble",
+      "body": "Hello Ada!",
+      "tags": [{ "name": "batch", "value": "reminder_30" }]
+    },
+    {
+      "to": "+233241234567",
+      "from": "Dugble",
+      "body": "Hello Grace!",
+      "scheduled_at": "in 10 min",
+      "tags": [{ "name": "batch", "value": "reminder_30" }]
+    }
+  ]'
+```
+
+For compatibility, Dugble also accepts an object containing `messages`:
+
+```json
+{
+    "messages": [
+        {
+            "to": "+233201234567",
+            "from": "Dugble",
+            "body": "Hello Ada!"
+        }
+    ]
+}
+```
+
+## Response ordering
+
+Every item in `data` corresponds to the request item at the same zero-based index:
+
+```json
+{
+    "success": true,
+    "data": [
+        {
+            "object": "sms",
+            "id": "ae2014de-c168-4c61-8267-70d2662a1ce1"
+        },
+        {
+            "object": "sms",
+            "id": "faccb7a5-8a28-4e9a-ac64-8da1cc3bc1cb"
+        }
+    ]
+}
+```
+
+## Atomic behavior
+
+Before committing a batch, Dugble:
+
+1. Validates every destination, sender ID, body, tag, metadata object, and schedule.
+2. Resolves each destination country and calculates its segment count.
+3. Creates every message and durable delivery event.
+
+These writes occur in one transaction. If any message is invalid, a delivery event cannot be queued, no message in the batch is committed.
+
+<Note>
+    Atomic acceptance does not guarantee atomic delivery. Once accepted, each
+    SMS has an independent provider and carrier delivery lifecycle.
+</Note>
+
+## Best practices
+
+- Use one idempotency key for the complete batch request.
+- Preserve request ordering when storing returned IDs.
+- Split batches larger than 100 messages into independent requests with independent keys.
+- Group messages by business operation rather than combining unrelated sends.
+- Retrieve individual messages when you need their delivery details.

@@ -1,0 +1,68 @@
+---
+title: "Sender IDs"
+description: "Register and use approved SMS sender identities"
+---
+
+A sender ID is the name recipients see as the origin of an SMS. Dugble requires the `from` value on every SMS to match an approved sender ID owned by your team.
+
+## Register a sender ID
+
+Provide:
+
+- `name`: the requested sender name, up to 11 characters
+- `country_code`: a two-letter ISO 3166-1 alpha-2 country code
+- `purpose`: a clear explanation of the messages you intend to send, up to 500 characters
+- `provider`: an optional provider assignment when your Dugble setup requires one
+
+New sender IDs begin in `pending` status and cannot be used until approved.
+
+<Steps>
+    <Step title="Choose a recognizable name">
+        Use your product or company name. Avoid names that could impersonate
+        another organization or confuse recipients.
+    </Step>
+    <Step title="Describe the use case">
+        Explain whether the sender will deliver authentication codes, account
+        alerts, receipts, reminders, or another transactional workflow.
+    </Step>
+    <Step title="Wait for approval">
+        Approval requirements differ by destination country and provider. Do not
+        place the sender ID into production until its status is `approved`.
+    </Step>
+    <Step title="Use the exact approved value">
+        Set `from` to the approved sender ID name. Matching is case-insensitive,
+        but using the displayed value exactly keeps application configuration
+        clear.
+    </Step>
+</Steps>
+
+## Sender ID states
+
+| State       | Meaning                                                 |
+| ----------- | ------------------------------------------------------- |
+| `pending`   | The sender ID is awaiting review.                       |
+| `approved`  | The sender ID can be used to send SMS.                  |
+| `rejected`  | The request was declined; inspect the rejection reason. |
+| `suspended` | Use has been temporarily blocked.                       |
+| `inactive`  | The sender ID is no longer active.                      |
+
+## Use an approved sender
+
+```json
+{
+    "to": "+233201234567",
+    "from": "Dugble",
+    "body": "Your order has shipped."
+}
+```
+
+If `from` does not match an approved sender ID for the authenticated team, Dugble rejects the request.
+
+## Country considerations
+
+Sender ID registration is country-specific. A name approved for one country may require separate registration or may behave differently elsewhere. Some networks replace alphanumeric sender IDs, require pre-registration, or do not allow recipients to reply.
+
+<Warning>
+    An alphanumeric sender ID is generally one-way. Do not promise reply-based
+    workflows unless your team has a reply-capable number and route configured.
+</Warning>

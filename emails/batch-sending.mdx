@@ -1,0 +1,82 @@
+---
+title: "Batch sending"
+description: "Queue up to 100 independent emails in one atomic API request"
+---
+
+The batch endpoint reduces HTTP overhead when your application needs to send multiple independent emails. Submit up to 100 messages to `POST /emails/batch`.
+
+## Send a batch
+
+The preferred request shape is a top-level JSON array:
+
+```bash
+curl --request POST \
+  --url https://api.dugble.com/emails/batch \
+  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: <unique-request-key>" \
+  --data '[
+    {
+      "to": "ada@example.com",
+      "subject": "Hello Ada",
+      "html": "<p>Your report is ready.</p>",
+      "tags": [{ "name": "batch", "value": "weekly_30" }]
+    },
+    {
+      "to": "grace@example.com",
+      "subject": "Hello Grace",
+      "text": "Your report is ready.",
+      "tags": [{ "name": "batch", "value": "weekly_30" }]
+    }
+  ]'
+```
+
+For compatibility, Dugble also accepts an object containing `messages`:
+
+```json
+{
+    "messages": [
+        {
+            "to": "ada@example.com",
+            "subject": "Hello Ada",
+            "text": "Your report is ready."
+        }
+    ]
+}
+```
+
+## Response ordering
+
+A successful request returns `202 Accepted`. Every item in `data` corresponds to the message at the same zero-based index in the request.
+
+```json
+{
+    "success": true,
+    "data": [
+        { "id": "ae2014de-c168-4c61-8267-70d2662a1ce1" },
+        { "id": "faccb7a5-8a28-4e9a-ac64-8da1cc3bc1cb" }
+    ]
+}
+```
+
+Store each returned ID with the application record that produced the corresponding request item.
+
+## Atomic behavior
+
+Dugble validates the complete batch before opening its write transaction. It then creates every message and its pending delivery event in one transaction. If any item is invalid or a transactional operation fails, no message in the batch is committed.
+
+<Note>
+    Atomic acceptance does not mean every recipient will ultimately receive the
+    email. Each accepted message has its own delivery lifecycle and can later be
+    delivered, delayed, bounced, rejected, or failed independently.
+</Note>
+
+## Limitations
+
+- A batch can contain between 1 and 100 messages.
+- Attachments are not supported by the batch endpoint.
+- Each message must independently satisfy the normal email validation rules.
+- Each message may be sent immediately or have its own `scheduled_at` value.
+- The `Idempotency-Key` applies to the entire HTTP request, not to individual array items.
+
+For messages with attachments, send each email through `POST /emails` instead.

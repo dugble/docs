@@ -1,0 +1,77 @@
+---
+title: "Webhooks overview"
+"sidebarTitle": "Overview"
+description: "Receive event-driven delivery updates for Dugble SMS messages"
+---
+
+Webhooks let an application react to SMS lifecycle changes without repeatedly polling the SMS retrieve endpoint.
+
+<Warning>
+    Customer-configurable outgoing webhooks are currently a preview. Preview
+    endpoints support the SMS events listed in the event catalog; email events
+    are not emitted yet.
+</Warning>
+
+## How webhook delivery works
+
+<Steps>
+    <Step title="Register an HTTPS endpoint">
+        Add an endpoint in your Dugble team settings and select the events your
+        application needs.
+    </Step>
+    <Step title="Return a successful response quickly">
+        Verify and persist the event, return a `2xx` response, and perform slow
+        work asynchronously.
+    </Step>
+    <Step title="Handle retries and duplicates">
+        Webhook delivery is an at-least-once process. Use the event ID as an
+        idempotency key before applying side effects.
+    </Step>
+</Steps>
+
+## Build your endpoint now
+
+You can prepare an endpoint around a small dispatcher:
+
+```ts
+app.post("/webhooks/dugble", async (request, response) => {
+    // Verify X-Dugble-Signature against the raw body before decoding JSON.
+    const event = request.body;
+
+    if (await eventStore.has(event.id)) {
+        return response.sendStatus(200);
+    }
+
+    await eventStore.save(event.id, event);
+
+    switch (event.type) {
+        case "sms.delivered":
+            await markSmsDelivered(event.data.id);
+            break;
+    }
+
+    response.sendStatus(200);
+});
+```
+
+See the event catalog for the signature header and HMAC input format.
+
+<Card title="Verify signatures" icon="key" href="/webhooks/signatures">
+    Authenticate requests with the raw body and your endpoint signing secret.
+</Card>
+
+## Current alternative
+
+For event types not included in the preview, retrieve message state directly:
+
+- `GET /emails/{message_id}` for email
+- `GET /sms/{message_id}` for SMS
+- `POST /sms/{message_id}/sync-status` to request an SMS provider status refresh
+
+<Card title="Event catalog" icon="bolt" href="/webhooks/events">
+    Review the supported lifecycle events and suggested application behavior.
+</Card>
+
+<Card title="Operational controls" icon="gauge" href="/webhooks/operations">
+    Monitor endpoint health, recover failures, and control delivery traffic.
+</Card>

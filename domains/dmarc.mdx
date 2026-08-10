@@ -1,0 +1,84 @@
+---
+title: "Implementing DMARC"
+sidebarTitle: "DMARC"
+description: "Protect your sender domain with DMARC alignment, policy, and reporting"
+---
+
+Domain-based Message Authentication, Reporting, and Conformance (DMARC) tells receiving mail systems what to do when a message using your domain does not align with SPF or DKIM. DMARC also provides aggregate reports that help identify legitimate and unauthorized senders.
+
+## How DMARC passes
+
+A message passes DMARC when at least one aligned authentication method passes:
+
+- **DKIM alignment:** the domain in a valid DKIM signature aligns with the visible From domain.
+- **SPF alignment:** the authenticated envelope-from domain aligns with the visible From domain.
+
+Alignment can be relaxed, allowing a subdomain relationship, or strict, requiring an exact domain match.
+
+## Start with monitoring
+
+Publish DMARC as a TXT record at `_dmarc.yourdomain.com`:
+
+```text
+v=DMARC1; p=none; rua=mailto:dmarc-reports@yourdomain.com; pct=100
+```
+
+This record requests aggregate reports without asking receivers to quarantine or reject failing messages.
+
+<Warning>
+  Make sure the reporting mailbox can receive and process large XML aggregate
+  reports. DMARC reports may contain information about all systems sending mail
+  for your domain.
+</Warning>
+
+## Move toward enforcement
+
+Use a staged rollout:
+
+<Steps>
+  <Step title="Inventory senders">
+    Identify every service that sends mail using your visible From domain, including support, billing, marketing, and internal systems.
+  </Step>
+  <Step title="Monitor with p=none">
+    Review aggregate reports until legitimate sources consistently pass aligned SPF or DKIM.
+  </Step>
+  <Step title="Quarantine a percentage">
+    Begin enforcement gradually, for example:
+
+    ```text
+    v=DMARC1; p=quarantine; pct=10; rua=mailto:dmarc-reports@yourdomain.com
+    ```
+
+  </Step>
+  <Step title="Increase enforcement">
+    Raise `pct` as reports confirm that legitimate traffic remains authenticated, then move to `p=reject` when ready.
+  </Step>
+</Steps>
+
+## Common tags
+
+| Tag     | Purpose                                                                  |
+| ------- | ------------------------------------------------------------------------ |
+| `v`     | Protocol version. It must be `DMARC1`.                                   |
+| `p`     | Policy for the organizational domain: `none`, `quarantine`, or `reject`. |
+| `sp`    | Optional policy for subdomains.                                          |
+| `rua`   | Mailbox URI for aggregate reports.                                       |
+| `pct`   | Percentage of failing messages to which policy applies.                  |
+| `adkim` | DKIM alignment mode: `r` for relaxed or `s` for strict.                  |
+| `aspf`  | SPF alignment mode: `r` for relaxed or `s` for strict.                   |
+
+## Example enforcement record
+
+```text
+v=DMARC1; p=reject; sp=reject; rua=mailto:dmarc-reports@yourdomain.com; adkim=r; aspf=r; pct=100
+```
+
+Do not copy an enforcement policy blindly. Confirm that every legitimate sender is aligned before using `p=reject`, or valid mail may be rejected.
+
+## Troubleshooting
+
+- Verify that only one DMARC TXT record exists at `_dmarc.yourdomain.com`.
+- Confirm the record begins with `v=DMARC1` and uses valid semicolon-separated tags.
+- Check that DKIM signatures use a domain aligned with the visible From address.
+- Check that the SPF-authenticated envelope-from domain aligns with the visible From address.
+- Allow time for DNS caches to expire after changes.

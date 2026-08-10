@@ -1,0 +1,1663 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Dugble Email and SMS API",
+    "description": "Send, schedule, inspect, update, and cancel email and SMS messages with Dugble. All endpoints require a team token sent as a Bearer token.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Dugble Support",
+      "email": "support@dugble.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.dugble.com",
+      "description": "Production"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Email",
+      "description": "Send and manage transactional emails."
+    },
+    {
+      "name": "SMS",
+      "description": "Send and manage SMS messages."
+    }
+  ],
+  "paths": {
+    "/emails": {
+      "get": {
+        "operationId": "listEmails",
+        "summary": "List emails",
+        "description": "Returns emails belonging to the authenticated team, newest first.",
+        "tags": [
+          "Email"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Emails retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailListEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "sendEmail",
+        "summary": "Send an email",
+        "description": "Queues an email for immediate or scheduled delivery. The `to`, `cc`, `bcc`, and `reply_to` fields accept either one address or an array. Addresses may be strings such as `Ada <ada@example.com>` or structured objects.",
+        "tags": [
+          "Email"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailSendRequest"
+              },
+              "example": {
+                "from": "Dugble <notifications@example.com>",
+                "to": [
+                  "Ada <ada@example.com>"
+                ],
+                "subject": "Welcome to Dugble",
+                "html": "<h1>Welcome!</h1><p>Your account is ready.</p>",
+                "text": "Welcome! Your account is ready.",
+                "tags": [
+                  {
+                    "name": "category",
+                    "value": "welcome"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Email accepted for asynchronous delivery.",
+            "headers": {
+              "Location": {
+                "description": "Relative URL of the queued email.",
+                "schema": {
+                  "type": "string",
+                  "example": "/emails/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailAcceptedEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/emails/batch": {
+      "post": {
+        "operationId": "sendEmailBatch",
+        "summary": "Send a batch of emails",
+        "description": "Atomically queues up to 100 emails. Attachments are not supported in batch requests. The response IDs remain in request order. A top-level array is preferred; an object containing a `messages` array is also accepted.",
+        "tags": [
+          "Email"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/EmailBatchArray"
+                  },
+                  {
+                    "$ref": "#/components/schemas/EmailBatchObject"
+                  }
+                ]
+              },
+              "example": [
+                {
+                  "to": "ada@example.com",
+                  "subject": "Hello Ada",
+                  "html": "<p>Hello Ada!</p>"
+                },
+                {
+                  "to": [
+                    "grace@example.com"
+                  ],
+                  "subject": "Hello Grace",
+                  "text": "Hello Grace!"
+                }
+              ]
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "All emails accepted for asynchronous delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailBatchAcceptedEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/emails/{message_id}": {
+      "get": {
+        "operationId": "getEmail",
+        "summary": "Retrieve an email",
+        "description": "Retrieves one email belonging to the authenticated team.",
+        "tags": [
+          "Email"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MessageId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateEmail",
+        "summary": "Update a scheduled email",
+        "description": "Changes the delivery time of an email that is still queued for scheduled delivery.",
+        "tags": [
+          "Email"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MessageId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleUpdateRequest"
+              },
+              "example": {
+                "scheduled_at": "2026-08-05T11:52:01.858Z"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email schedule updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailMutationEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/emails/{message_id}/cancel": {
+      "post": {
+        "operationId": "cancelEmail",
+        "summary": "Cancel a scheduled email",
+        "description": "Cancels an email that is still queued for scheduled delivery.",
+        "tags": [
+          "Email"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MessageId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email canceled successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailMutationEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/sms": {
+      "get": {
+        "operationId": "listSmsMessages",
+        "summary": "List SMS messages",
+        "description": "Returns SMS messages belonging to the authenticated team, newest first.",
+        "tags": [
+          "SMS"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SMS messages retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsListEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "sendSms",
+        "summary": "Send an SMS",
+        "description": "Queues an SMS for immediate or scheduled delivery. Recipient numbers must use E.164 format.",
+        "tags": [
+          "SMS"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmsSendRequest"
+              },
+              "example": {
+                "to": "+233201234567",
+                "from": "Dugble",
+                "body": "Your verification code is 123456.",
+                "tags": [
+                  {
+                    "name": "category",
+                    "value": "verification"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "SMS accepted for asynchronous delivery.",
+            "headers": {
+              "Location": {
+                "description": "Relative URL of the queued SMS.",
+                "schema": {
+                  "type": "string",
+                  "example": "/sms/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsAcceptedEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/sms/batch": {
+      "post": {
+        "operationId": "sendSmsBatch",
+        "summary": "Send a batch of SMS messages",
+        "description": "Atomically validates, prices, charges, and queues up to 100 SMS messages. Response IDs remain in request order. A top-level array is preferred; an object containing a `messages` array is also accepted.",
+        "tags": [
+          "SMS"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SmsBatchArray"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SmsBatchObject"
+                  }
+                ]
+              },
+              "example": [
+                {
+                  "to": "+233201234567",
+                  "from": "Dugble",
+                  "body": "Hello Ada!"
+                },
+                {
+                  "to": "+233241234567",
+                  "from": "Dugble",
+                  "body": "Hello Grace!"
+                }
+              ]
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "All SMS messages accepted for asynchronous delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsBatchAcceptedEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/sms/{message_id}": {
+      "get": {
+        "operationId": "getSmsMessage",
+        "summary": "Retrieve an SMS",
+        "description": "Retrieves one SMS message belonging to the authenticated team.",
+        "tags": [
+          "SMS"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MessageId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SMS retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateSmsMessage",
+        "summary": "Update a scheduled SMS",
+        "description": "Changes the delivery time of an SMS that is still queued for scheduled delivery.",
+        "tags": [
+          "SMS"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MessageId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleUpdateRequest"
+              },
+              "example": {
+                "scheduled_at": "2026-08-05T11:52:01.858Z"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SMS schedule updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsMutationEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/sms/{message_id}/cancel": {
+      "post": {
+        "operationId": "cancelSmsMessage",
+        "summary": "Cancel a scheduled SMS",
+        "description": "Cancels an SMS that is still queued for scheduled delivery.",
+        "tags": [
+          "SMS"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MessageId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SMS canceled successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsMutationEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/sms/{message_id}/sync-status": {
+      "post": {
+        "operationId": "syncSmsStatus",
+        "summary": "Sync SMS delivery status",
+        "description": "Refreshes the SMS delivery status from its provider and returns the latest message state.",
+        "tags": [
+          "SMS"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MessageId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SMS status synchronized successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Team token",
+        "description": "Pass a Dugble team token in the `Authorization` header as `Bearer <token>`."
+      }
+    },
+    "parameters": {
+      "MessageId": {
+        "name": "message_id",
+        "in": "path",
+        "required": true,
+        "description": "Dugble message ID.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of messages to return. Values outside 1\u2013100 use the default of 50.",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        }
+      },
+      "Offset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Number of messages to skip.",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "description": "A unique key that prevents duplicate mutation requests. Maximum 256 characters.",
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "example": "order_123_welcome_email"
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "The request failed. The HTTP status reflects the error category.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "examples": {
+              "badRequest": {
+                "summary": "Invalid request",
+                "value": {
+                  "success": false,
+                  "error": {
+                    "code": "BAD_REQUEST",
+                    "message": "Invalid request"
+                  }
+                }
+              },
+              "unauthorized": {
+                "summary": "Invalid or missing team token",
+                "value": {
+                  "success": false,
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Authentication is required"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "EmailAddressObject": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ada@example.com"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "example": "Ada Lovelace"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailAddress": {
+        "description": "An email address string, optionally with a friendly name, or a structured address object.",
+        "oneOf": [
+          {
+            "type": "string",
+            "example": "Ada Lovelace <ada@example.com>"
+          },
+          {
+            "$ref": "#/components/schemas/EmailAddressObject"
+          }
+        ]
+      },
+      "EmailAddressOrList": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailAddress"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailAddress"
+            }
+          }
+        ]
+      },
+      "Tag": {
+        "type": "object",
+        "required": [
+          "name",
+          "value"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "maxLength": 256,
+            "example": "category"
+          },
+          "value": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "maxLength": 256,
+            "example": "welcome"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Attachment": {
+        "type": "object",
+        "required": [
+          "filename"
+        ],
+        "description": "An attachment must provide exactly one of `content` or `path`. Total decoded Base64 content may not exceed 40 MB.",
+        "properties": {
+          "content": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "description": "Base64-encoded attachment content."
+          },
+          "filename": {
+            "type": "string",
+            "minLength": 1,
+            "example": "invoice.pdf"
+          },
+          "path": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://",
+            "example": "https://example.com/invoice.pdf"
+          },
+          "content_type": {
+            "type": "string",
+            "example": "application/pdf"
+          },
+          "content_id": {
+            "type": "string",
+            "example": "company-logo"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "content"
+            ],
+            "properties": {
+              "content": {
+                "type": "string"
+              },
+              "path": false
+            }
+          },
+          {
+            "required": [
+              "path"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": false
+            }
+          }
+        ],
+        "additionalProperties": false
+      },
+      "EmailSendRequest": {
+        "type": "object",
+        "required": [
+          "to",
+          "subject"
+        ],
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/EmailAddress"
+          },
+          "to": {
+            "$ref": "#/components/schemas/EmailAddressOrList"
+          },
+          "cc": {
+            "$ref": "#/components/schemas/EmailAddressOrList"
+          },
+          "bcc": {
+            "$ref": "#/components/schemas/EmailAddressOrList"
+          },
+          "reply_to": {
+            "$ref": "#/components/schemas/EmailAddressOrList"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "html": {
+            "type": "string",
+            "maxLength": 1048576,
+            "description": "HTML body. At least one of `html` or `text` is required."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1048576,
+            "description": "Plain-text body. At least one of `html` or `text` is required."
+          },
+          "headers": {
+            "type": "object",
+            "maxProperties": 100,
+            "additionalProperties": {
+              "type": "string"
+            },
+            "example": {
+              "X-Entity-Ref-ID": "order-123"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          },
+          "scheduled_at": {
+            "type": "string",
+            "description": "Future ISO 8601 date-time or relative value such as `in 5 min`.",
+            "examples": [
+              "2026-08-05T11:52:01.858Z",
+              "in 5 min"
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Custom JSON metadata, up to 16 KB."
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "html"
+            ]
+          },
+          {
+            "required": [
+              "text"
+            ]
+          }
+        ],
+        "additionalProperties": false
+      },
+      "EmailBatchArray": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 100,
+        "items": {
+          "$ref": "#/components/schemas/EmailBatchItem"
+        }
+      },
+      "EmailBatchObject": {
+        "type": "object",
+        "required": [
+          "messages"
+        ],
+        "properties": {
+          "messages": {
+            "$ref": "#/components/schemas/EmailBatchArray"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailBatchItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EmailSendRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "attachments": false
+            }
+          }
+        ]
+      },
+      "EmailSendResult": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "to_email",
+          "subject",
+          "status",
+          "queued_at",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "to_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "to_name": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EmailStatus"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "queued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delivered_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Email": {
+        "type": "object",
+        "required": [
+          "object",
+          "id",
+          "to",
+          "from",
+          "created_at",
+          "subject",
+          "bcc",
+          "cc",
+          "reply_to",
+          "last_event",
+          "tags"
+        ],
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "email"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Provider message ID, when available."
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "from": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "html": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bcc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reply_to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "last_event": {
+            "$ref": "#/components/schemas/EmailStatus"
+          },
+          "scheduled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          }
+        }
+      },
+      "EmailStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "processing",
+          "submitted",
+          "delivered",
+          "delayed",
+          "bounced",
+          "complained",
+          "rejected",
+          "failed",
+          "canceled"
+        ]
+      },
+      "ScheduleUpdateRequest": {
+        "type": "object",
+        "required": [
+          "scheduled_at"
+        ],
+        "properties": {
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Future ISO 8601 delivery time."
+          }
+        },
+        "additionalProperties": false
+      },
+      "MutationResult": {
+        "type": "object",
+        "required": [
+          "object",
+          "id"
+        ],
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsSendRequest": {
+        "type": "object",
+        "required": [
+          "to",
+          "from",
+          "body"
+        ],
+        "properties": {
+          "to": {
+            "type": "string",
+            "pattern": "^\\+[1-9][0-9]{7,14}$",
+            "example": "+233201234567"
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 11,
+            "example": "Dugble"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1600
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          },
+          "scheduled_at": {
+            "type": "string",
+            "description": "ISO 8601 time at least 30 seconds in the future, or a relative value such as `in 5 min`.",
+            "examples": [
+              "2026-08-05T11:52:01.858Z",
+              "in 5 min"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsBatchArray": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 100,
+        "items": {
+          "$ref": "#/components/schemas/SmsSendRequest"
+        }
+      },
+      "SmsBatchObject": {
+        "type": "object",
+        "required": [
+          "messages"
+        ],
+        "properties": {
+          "messages": {
+            "$ref": "#/components/schemas/SmsBatchArray"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsSendResult": {
+        "type": "object",
+        "required": [
+          "object",
+          "id"
+        ],
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "sms"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Destination": {
+        "type": "object",
+        "required": [
+          "country"
+        ],
+        "properties": {
+          "country": {
+            "type": "string",
+            "description": "Resolved ISO 3166-1 alpha-2 destination country code.",
+            "example": "GH"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsFailure": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "SMS_FAILED"
+          },
+          "message": {
+            "type": "string",
+            "example": "SMS delivery failed"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsMessage": {
+        "type": "object",
+        "required": [
+          "object",
+          "id",
+          "to",
+          "from",
+          "body",
+          "last_event",
+          "destination",
+          "segments",
+          "metadata",
+          "tags",
+          "scheduled_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "sms"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Provider message ID, when available."
+          },
+          "to": {
+            "type": "string",
+            "example": "+233201234567"
+          },
+          "from": {
+            "type": "string",
+            "example": "Dugble"
+          },
+          "body": {
+            "type": "string"
+          },
+          "last_event": {
+            "$ref": "#/components/schemas/SmsStatus"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/Destination"
+          },
+          "segments": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          },
+          "scheduled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "failure": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SmsFailure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "submitted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "delivered_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SmsStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "processing",
+          "submitted",
+          "sent",
+          "delivered",
+          "undelivered",
+          "rejected",
+          "failed",
+          "expired",
+          "unknown",
+          "canceled"
+        ]
+      },
+      "ErrorObject": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "error"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": false
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorObject"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailAcceptedEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/EmailSummary"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailBatchAcceptedEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailSendResult"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Email"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailListEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailSummary"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailMutationEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/MutationResult"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsAcceptedEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/SmsSendResult"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsBatchAcceptedEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SmsSendResult"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/SmsMessage"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsListEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SmsMessage"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmsMutationEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/MutationResult"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

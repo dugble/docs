@@ -1,0 +1,140 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Dugble",
+  "colors": {
+    "primary": "#0E0E0E",
+    "light": "#B0B0B0",
+    "dark": "#0E0E0E"
+  },
+  "favicon": "/assets/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["overview", "quickstart"]
+          },
+          {
+            "group": "Email",
+            "pages": [
+              "emails/introduction",
+              "emails/custom-headers",
+              "emails/schedule-email",
+              "emails/batch-sending"
+            ]
+          },
+          {
+            "group": "SMS",
+            "pages": [
+              "sms/introduction",
+              "sms/sender-ids",
+              "sms/schedule-sms",
+              "sms/batch-sending",
+              "sms/delivery-status"
+            ]
+          },
+          {
+            "group": "Domains",
+            "pages": ["domains/introduction", "domains/dmarc"]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "webhooks/introduction",
+              "webhooks/events",
+              "webhooks/signatures",
+              "webhooks/operations"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "square-terminal",
+        "openapi": "/openapi.json",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/errors",
+              "api-reference/idempotency"
+            ]
+          },
+          {
+            "group": "Email",
+            "pages": [
+              "POST /emails",
+              "POST /emails/batch",
+              "GET /emails",
+              "GET /emails/{message_id}",
+              "PATCH /emails/{message_id}",
+              "POST /emails/{message_id}/cancel"
+            ]
+          },
+          {
+            "group": "SMS",
+            "pages": [
+              "POST /sms",
+              "POST /sms/batch",
+              "GET /sms",
+              "GET /sms/{message_id}",
+              "PATCH /sms/{message_id}",
+              "POST /sms/{message_id}/cancel",
+              "POST /sms/{message_id}/sync-status"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/assets/light.svg",
+    "dark": "/assets/dark.svg"
+  },
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  },
+  "background": {
+    "color": {
+      "dark": "#050505"
+    }
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@dugble.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://dashboard.dugble.com"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/coffeyvidzro",
+      "github": "https://github.com/coffeyvidzro",
+      "linkedin": "https://linkedin.com/in/coffeyvidzro"
+    }
+  }
+}

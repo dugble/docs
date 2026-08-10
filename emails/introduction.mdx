@@ -1,0 +1,125 @@
+---
+title: "Email overview"
+description: "Send reliable transactional email with the Dugble Email API"
+---
+
+Dugble gives your application one API for sending, scheduling, and tracking transactional email. A send request is accepted asynchronously and returns immediately while Dugble handles delivery in the background.
+
+## Before you send
+
+You need:
+
+- A Dugble team and a team token with the `email:send` permission
+- A configured sender address
+- At least one recipient
+- An email subject
+- An HTML body, a plain-text body, or both
+
+<Note>
+    Keep team tokens on your server. Never expose a team token in browser or
+    mobile application code.
+</Note>
+
+## Send an email
+
+```bash
+curl --request POST \
+  --url https://api.dugble.com/emails \
+  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Content-Type: application/json" \
+  --header "Idempotency-Key: <unique-request-key>" \
+  --data '{
+    "from": "Dugble <notifications@example.com>",
+    "to": "Ada Lovelace <ada@example.com>",
+    "subject": "Welcome to Dugble",
+    "html": "<h1>Welcome!</h1><p>Your account is ready.</p>",
+    "text": "Welcome! Your account is ready.",
+    "tags": [
+      { "name": "category", "value": "welcome" }
+    ]
+  }'
+```
+
+A successful request returns `202 Accepted`:
+
+```json
+{
+    "success": true,
+    "data": {
+        "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
+        "to_email": "ada@example.com",
+        "to_name": "Ada Lovelace",
+        "subject": "Welcome to Dugble",
+        "status": "queued",
+        "queued_at": "2026-07-26T12:00:00Z",
+        "created_at": "2026-07-26T12:00:00Z"
+    }
+}
+```
+
+The response means Dugble accepted the message for asynchronous delivery. It does not mean the recipient's mail server has delivered it.
+
+## Address formats
+
+The `from`, `to`, `cc`, `bcc`, and `reply_to` fields accept friendly-name strings:
+
+```json
+{
+    "to": "Ada Lovelace <ada@example.com>"
+}
+```
+
+They also accept structured objects:
+
+```json
+{
+    "to": {
+        "email": "ada@example.com",
+        "name": "Ada Lovelace"
+    }
+}
+```
+
+Recipient fields accept a single address or an array. An email may have up to 50 recipients across `to`, `cc`, and `bcc`.
+
+## Message content
+
+Provide at least one of:
+
+- `html` for the HTML version
+- `text` for the plain-text version
+
+For the best accessibility and deliverability, provide both versions. Each body can be up to 1 MiB.
+
+## Track a message
+
+Retrieve the latest state using the Dugble email ID:
+
+```bash
+curl --request GET \
+  --url https://api.dugble.com/emails/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794 \
+  --header "Authorization: Bearer $DUGBLE_TOKEN"
+```
+
+The `last_event` field can be `queued`, `processing`, `submitted`, `delivered`, `delayed`, `bounced`, `complained`, `rejected`, `failed`, or `canceled`.
+
+## Next steps
+
+<CardGroup cols={2}>
+    <Card title="Schedule email" icon="clock" href="/emails/schedule-email">
+        Send later, reschedule, or cancel a queued email.
+    </Card>
+    <Card title="Batch sending" icon="layer-group" href="/emails/batch-sending">
+        Queue up to 100 independent emails atomically.
+    </Card>
+    <Card
+        title="Custom headers"
+        icon="brackets-curly"
+        href="/emails/custom-headers"
+    >
+        Add application-specific headers to a message.
+    </Card>
+    <Card title="Sender domains" icon="globe" href="/domains/introduction">
+        Learn how sender identity and DNS authentication work.
+    </Card>
+</CardGroup>

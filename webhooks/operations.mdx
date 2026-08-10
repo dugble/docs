@@ -1,0 +1,67 @@
+---
+title: "Operate webhook endpoints"
+description: "Monitor failures, recover deliveries, and control endpoint traffic"
+---
+
+Webhook delivery is asynchronous and at least once. Use endpoint health and
+delivery records to distinguish temporary receiver failures from endpoints that
+need operator intervention.
+
+## Automatic endpoint protection
+
+Dugble tracks consecutive deliveries that exhaust the complete retry schedule.
+A successful delivery resets the counter. When the counter reaches the worker's
+auto-disable threshold, Dugble:
+
+1. Marks the endpoint disabled.
+2. Records `failure_threshold` as the disable reason.
+3. Stops claiming pending or retrying deliveries for that endpoint.
+4. Leaves delivery and response history available for diagnosis.
+
+The default threshold is 20 exhausted deliveries. Operators can set
+`WEBHOOK_DELIVERY_AUTO_DISABLE_AFTER` to a positive integer for the worker
+deployment. This is a deployment-wide safety control, not a per-endpoint retry
+limit.
+
+<Warning>
+    Disabling an endpoint does not delete its events or delivery history. Events
+    created while an endpoint is disabled do not create deliveries for it.
+</Warning>
+
+## Endpoint health fields
+
+Endpoint responses include these operational fields:
+
+| Field | Meaning |
+| --- | --- |
+| `consecutive_failures` | Deliveries that exhausted retries since the last success or manual re-enable. |
+| `last_failure_at` | Time the most recent delivery exhausted its retries. |
+| `disabled_reason` | `manual`, `failure_threshold`, or absent while no reason is recorded. |
+| `disabled_at` | Time the endpoint was disabled. |
+
+## Recovery runbook
+
+1. Inspect the latest failed delivery's response status, truncated response
+   body, and error.
+2. Correct DNS, TLS, signature verification, timeout, or application failures
+   at the receiver.
+3. Re-enable the endpoint. Re-enabling clears its failure counter and disable
+   reason.
+4. Send a `webhook.test` event and confirm a successful delivery.
+5. Manually retry individual failed deliveries that still matter to your
+   application.
+
+Manual retry only applies to a delivery in the `failed` state. It returns that
+delivery to `pending`; it does not recreate deliveries that were never generated
+while an endpoint was disabled.
+
+## Emergency traffic control
+
+Disable an endpoint manually before receiver maintenance or during an incident.
+Manual disablement records `manual` as the reason and prevents the worker from
+claiming more deliveries for that endpoint. In-flight HTTP requests may still
+finish, so receivers must continue to handle event IDs idempotently.
+
+<Card title="Verify signatures" icon="key" href="/webhooks/signatures">
+    Check receiver authentication before retrying failed deliveries.
+</Card>

@@ -1,0 +1,71 @@
+---
+title: "Delivery status"
+description: "Interpret SMS lifecycle states and refresh provider status"
+---
+
+Dugble tracks the lifecycle of each SMS from queueing through its latest known provider or carrier outcome. Retrieve a message to inspect `last_event`.
+
+```bash
+curl --request GET \
+  --url https://api.dugble.com/sms/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794 \
+  --header "Authorization: Bearer $DUGBLE_TOKEN"
+```
+
+## Statuses
+
+| Status           | Meaning                                                       | Final?          |
+| ---------------- | ------------------------------------------------------------- | --------------- |
+| `queued`         | The SMS and delivery job were created.                        | No              |
+| `processing`     | A delivery worker claimed the message.                        | No              |
+| `submitted`      | The provider accepted the message.                            | No              |
+| `sent`           | The provider reported that the SMS was sent onward.           | No              |
+| `delivered`      | Delivery was reported for the destination.                    | Yes             |
+| `undelivered`    | The carrier or provider could not deliver it.                 | Yes             |
+| `rejected`       | The provider rejected the request.                            | Yes             |
+| `expired`        | The delivery window expired before delivery.                  | Yes             |
+| `failed`         | Dugble could not complete delivery.                           | Yes             |
+| `unknown`        | The provider returned an unrecognized or indeterminate state. | Not necessarily |
+| `canceled`       | A scheduled SMS was canceled before processing.               | Yes             |
+
+A provider's status support varies by route and destination. `submitted` or `sent` does not prove handset delivery.
+
+## Refresh provider status
+
+For a submitted message with provider identifiers, request a provider status refresh:
+
+```bash
+curl --request POST \
+  --url https://api.dugble.com/sms/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794/sync-status \
+  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Idempotency-Key: <unique-request-key>"
+```
+
+The response contains the complete public SMS object with the latest normalized `last_event` value.
+
+## Failure information
+
+When a public failure applies, the retrieve response includes a stable `failure` object:
+
+```json
+{
+    "failure": {
+        "code": "SMS_UNDELIVERED",
+        "message": "SMS could not be delivered"
+    }
+}
+```
+
+Use the stable code for application logic and the message for display or diagnostics. Do not expose provider error details directly to end users.
+
+## Polling guidance
+
+Until outgoing Dugble webhooks are generally available:
+
+- Poll only non-final messages.
+- Apply exponential backoff rather than polling continuously.
+- Stop polling after a final status.
+- Use `sync-status` selectively; it makes a provider status request and is not intended as a high-frequency polling endpoint.
+
+<Card title="Webhook event preview" icon="bolt" href="/webhooks/events">
+    Review the planned event-driven alternative to polling.
+</Card>

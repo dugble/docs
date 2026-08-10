@@ -1,0 +1,70 @@
+---
+title: "Sender domains"
+"sidebarTitle": "Introduction"
+description: "Authenticate the domains used to send email through Dugble"
+---
+
+A sender domain is the domain after `@` in your email's From address. Authenticating that domain allows receiving mail systems to verify that Dugble is authorized to send on its behalf.
+
+For example, sending from `notifications@example.com` requires control of `example.com` or an appropriate sending subdomain such as `mail.example.com`.
+
+## Why domain authentication matters
+
+Domain authentication helps you:
+
+- Establish a consistent sender identity
+- Reduce spoofing risk
+- Improve inbox placement
+- Align SPF and DKIM with your sending infrastructure
+- Publish a DMARC policy for the visible From domain
+
+## Add a sender domain
+
+<Steps>
+  <Step title="Choose a sending domain">
+    Use a domain or subdomain you control. A dedicated subdomain such as
+    `mail.example.com` can separate transactional mail reputation from other
+    mail streams.
+  </Step>
+  <Step title="Add it to Dugble">
+    Create the sender domain in your Dugble team and select the provider region
+    used for delivery. Dugble currently supports `us-east-1` and `eu-north-1`.
+    The first request in a region may report that email infrastructure is still
+    being prepared; retry the request shortly. New domains begin in the
+    `pending` state.
+  </Step>
+  <Step title="Publish the DNS records">
+    Add every verification record shown by Dugble at your DNS provider. Copy
+    host names and values exactly.
+  </Step>
+  <Step title="Wait for verification">
+    DNS updates may take time to propagate. Do not send from the domain until
+    its Dugble status is `verified`.
+  </Step>
+</Steps>
+
+## Domain states
+
+| State      | Meaning                                                          |
+| ---------- | ---------------------------------------------------------------- |
+| `pending`  | The domain exists in Dugble but verification is incomplete.      |
+| `verified` | The required verification checks have passed.                    |
+| `failed`   | Verification failed; inspect the failure reason and DNS records. |
+| `disabled` | The domain is not currently available for sending.               |
+
+## DNS guidance
+
+- Enter DNS names exactly as shown, noting whether your provider automatically appends the zone name.
+- Do not proxy email authentication records through an HTTP proxy or CDN.
+- Avoid creating multiple SPF TXT records at the same host; merge authorized senders into one SPF policy.
+- Keep DKIM private keys with the sending provider. DNS contains only public verification material.
+- Lowering DNS TTL before a planned change can make later corrections propagate faster.
+
+<Tip>
+  Use a dedicated sending subdomain when different systems or teams manage your
+  product email and your corporate mailbox infrastructure.
+</Tip>
+
+<Card title="DMARC" icon="shield-check" href="/domains/dmarc">
+  Add a domain-level policy and reporting for unauthenticated email.
+</Card>
