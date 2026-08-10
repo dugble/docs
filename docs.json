@@ -69,6 +69,15 @@
             ]
           },
           {
+            "group": "Broadcasts",
+            "pages": [
+              "broadcasts/overview",
+              "broadcasts/audience",
+              "broadcasts/sending",
+              "broadcasts/analytics"
+            ]
+          },
+          {
             "group": "Webhooks",
             "pages": [
               "webhooks/introduction",
