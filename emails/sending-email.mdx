@@ -1,0 +1,64 @@
+---
+title: Sending Email
+description: Send transactional email with Dugble and understand the core request fields.
+---
+
+Dugble lets you send transactional email immediately or schedule it for later delivery.
+
+## Basic request
+
+Send email with `POST /emails` and include an idempotency key so retries do not create duplicate messages.
+
+```bash
+curl -X POST https://api.dugble.com/emails \
+  -H "Authorization: Bearer $DUGBLE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: welcome-user-42" \
+  -d '{
+    "from": "Dugble <notifications@example.com>",
+    "to": "ada@example.com",
+    "subject": "Welcome to Dugble",
+    "html": "<h1>Welcome!</h1><p>Your account is ready.</p>"
+  }'
+```
+
+A successful send request is accepted asynchronously and returns `202 Accepted`.
+
+## Message content
+
+Every email needs a recipient and subject. Include at least one of `html` or `text` for the body.
+
+You can also provide `cc`, `bcc`, `reply_to`, custom headers, attachments, tags, metadata, and a future `scheduled_at` value.
+
+## Sender address
+
+The `from` value can be an email address or a display name with an email address, such as:
+
+```text
+Dugble <notifications@example.com>
+```
+
+Use a sender address on a domain that has been configured and verified for sending.
+
+## Multiple recipients
+
+The `to`, `cc`, `bcc`, and `reply_to` fields accept a single address or a list of addresses.
+
+## Schedule delivery
+
+Set `scheduled_at` when the message should be delivered later instead of immediately. See [Schedule Email](/emails/schedule-email) for scheduling and cancellation workflows.
+
+## Send many independent emails
+
+For up to 100 independent messages in one request, use the batch endpoint. See [Batch Sending](/emails/batch-sending).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Attachments" href="/emails/attachments">
+    Add files or inline assets to an email.
+  </Card>
+  <Card title="Delivery Status" href="/emails/delivery-status">
+    Understand message states and delivery outcomes.
+  </Card>
+</CardGroup>
