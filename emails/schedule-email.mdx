@@ -1,9 +1,9 @@
 ---
 title: "Schedule email"
-description: "Send an email later, change its delivery time, or cancel it"
+description: "Send email later, change its delivery time, or cancel it"
 ---
 
-Set `scheduled_at` to queue an email for future delivery. Dugble stores the message immediately but does not make its delivery job available until the scheduled time.
+Set `scheduled_at` to create an email now and release it for delivery at a future time.
 
 ## Schedule a message
 
@@ -12,49 +12,51 @@ For a new send, `scheduled_at` accepts an ISO 8601 timestamp or a relative value
 ```bash
 curl --request POST \
   --url https://api.dugble.com/emails \
-  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
   --header "Content-Type: application/json" \
-  --header "Idempotency-Key: <unique-request-key>" \
+  --header "Idempotency-Key: appointment-reminder-42" \
   --data '{
     "to": "ada@example.com",
     "subject": "Your appointment is tomorrow",
     "text": "We will see you tomorrow at 10:00.",
-    "scheduled_at": "2026-08-05T11:52:01.858Z"
+    "scheduled_at": "2026-08-12T09:00:00Z"
   }'
 ```
 
-Relative scheduling uses the time Dugble receives and validates the request:
+Relative scheduling is also supported:
 
 ```json
 {
-    "scheduled_at": "in 30 min"
+  "scheduled_at": "in 30 min"
 }
 ```
 
-Supported relative units include seconds, minutes, hours, and days. For predictable production workflows, prefer an explicit UTC ISO 8601 timestamp.
+Supported relative units include seconds, minutes, hours, and days. For deterministic production workflows, prefer an explicit UTC ISO 8601 timestamp.
 
-## Update the delivery time
+## Reschedule an email
 
-Use `PATCH /emails/{message_id}` while the scheduled email is still queued. Updates require an ISO 8601 timestamp.
+Use `PATCH /emails/{message_id}` while the email is still a pending scheduled message. Rescheduling requires an ISO 8601 timestamp.
 
 ```bash
 curl --request PATCH \
   --url https://api.dugble.com/emails/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794 \
-  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
   --header "Content-Type: application/json" \
-  --header "Idempotency-Key: <unique-request-key>" \
+  --header "Idempotency-Key: appointment-reminder-42-reschedule" \
   --data '{
-    "scheduled_at": "2026-08-05T13:00:00Z"
+    "scheduled_at": "2026-08-12T11:00:00Z"
   }'
 ```
 
+A successful update returns the message ID:
+
 ```json
 {
-    "success": true,
-    "data": {
-        "object": "email",
-        "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794"
-    }
+  "success": true,
+  "data": {
+    "object": "email",
+    "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794"
+  }
 }
 ```
 
@@ -63,22 +65,20 @@ curl --request PATCH \
 ```bash
 curl --request POST \
   --url https://api.dugble.com/emails/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794/cancel \
-  --header "Authorization: Bearer $DUGBLE_TOKEN" \
-  --header "Idempotency-Key: <unique-request-key>"
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --header "Idempotency-Key: appointment-reminder-42-cancel"
 ```
 
-Cancellation removes the pending delivery job and changes the message state to `canceled` in the same database transaction.
+Only pending scheduled emails can be rescheduled or canceled. Once a message has started processing, the mutation is rejected with a conflict response.
 
 ## Scheduling rules
 
 - `scheduled_at` must resolve to a time in the future.
-- A message can only be rescheduled or canceled while it is queued and scheduled.
-- A message that is already processing or submitted cannot be changed or canceled.
-- Use a unique `Idempotency-Key` for every distinct scheduling mutation.
-- Retrieve the email after a mutation when your application needs to confirm its current state.
+- New send requests may use an ISO 8601 timestamp or supported relative value.
+- Rescheduling requires a future ISO 8601 timestamp.
+- Only pending scheduled emails can be changed or canceled.
+- Use a distinct `Idempotency-Key` for each distinct scheduling mutation.
 
 <Warning>
-    Do not wait until the exact delivery time to reschedule or cancel a message.
-    Network and queue processing can begin as soon as the scheduled time is
-    reached.
+Do not wait until the intended delivery time to reschedule or cancel a message. Queue processing can begin as soon as the scheduled time is reached.
 </Warning>
