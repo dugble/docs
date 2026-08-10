@@ -1,0 +1,56 @@
+---
+title: Sending SMS
+description: Send SMS messages with Dugble and understand the core request fields.
+---
+
+Dugble lets you send SMS messages immediately or schedule them for later delivery.
+
+## Basic request
+
+Send an SMS with `POST /sms` and include an idempotency key so retries do not create duplicate messages.
+
+```bash
+curl -X POST https://api.dugble.com/sms \
+  -H "Authorization: Bearer $DUGBLE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: verification-42" \
+  -d '{
+    "to": "+233201234567",
+    "from": "Dugble",
+    "body": "Your verification code is 123456."
+  }'
+```
+
+A successful send request is accepted asynchronously and returns `202 Accepted`.
+
+## Recipient numbers
+
+Use international phone number format for the `to` field.
+
+```text
++233201234567
+```
+
+## Sender
+
+The `from` field identifies the sender used for the SMS. Depending on the destination, this can be an approved sender ID or another supported sender identity.
+
+See [Sender IDs](/sms/sender-ids) for sender registration and approval guidance.
+
+## Message body
+
+The `body` field contains the text delivered to the recipient. Message length can affect how many SMS segments are required for delivery.
+
+The SMS resource exposes the calculated `segments` value after the message is created.
+
+## Schedule delivery
+
+Set `scheduled_at` when the SMS should be delivered later instead of immediately. See [Schedule SMS](/sms/schedule-sms).
+
+## Send many messages
+
+For up to 100 independent SMS messages in one request, use the batch endpoint. See [Batch Sending](/sms/batch-sending).
+
+## Track delivery
+
+Use the SMS resource and its events to monitor delivery. See [Delivery Status](/sms/delivery-status) and [SMS Events](/sms/events).
