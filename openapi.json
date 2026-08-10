@@ -26,6 +26,7 @@
     { "name": "Domains", "description": "Manage and verify sending domains." },
     { "name": "Sender IDs", "description": "Manage SMS sender IDs." },
     { "name": "Contacts", "description": "Manage contacts and their audience memberships." },
+    { "name": "Contact Properties", "description": "Manage typed custom property definitions used by contacts." },
     { "name": "Topics", "description": "Manage contact subscription topics." },
     { "name": "Segments", "description": "Manage audience segments." },
     { "name": "Suppressions", "description": "Manage suppressed email recipients." },
@@ -741,6 +742,110 @@
         }
       }
     },
+    "/contact-properties": {
+      "get": {
+        "operationId": "listContactProperties",
+        "summary": "List Contact Properties",
+        "description": "Returns contact property definitions configured for the authenticated team.",
+        "tags": ["Contact Properties"],
+        "parameters": [
+          { "$ref": "#/components/parameters/CursorLimit" },
+          { "$ref": "#/components/parameters/After" },
+          { "$ref": "#/components/parameters/Before" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact properties retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactPropertyListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createContactProperty",
+        "summary": "Create Contact Property",
+        "description": "Creates a typed custom property definition for contacts. Property keys are unique within the team.",
+        "tags": ["Contact Properties"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContactPropertyCreateRequest" },
+              "examples": {
+                "stringProperty": {
+                  "summary": "String property",
+                  "value": { "key": "company_name", "type": "string", "fallback_value": "Unknown" }
+                },
+                "numberProperty": {
+                  "summary": "Number property",
+                  "value": { "key": "lifetime_value", "type": "number", "fallback_value": 0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact property created successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactPropertyMutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/contact-properties/{property_id}": {
+      "get": {
+        "operationId": "getContactProperty",
+        "summary": "Retrieve Contact Property",
+        "description": "Retrieves a single contact property definition by ID.",
+        "tags": ["Contact Properties"],
+        "parameters": [{ "$ref": "#/components/parameters/ContactPropertyId" }],
+        "responses": {
+          "200": {
+            "description": "Contact property retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactPropertyEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "operationId": "updateContactProperty",
+        "summary": "Update Contact Property",
+        "description": "Replaces the fallback value for a contact property. Send `null` to clear the fallback value.",
+        "tags": ["Contact Properties"],
+        "parameters": [{ "$ref": "#/components/parameters/ContactPropertyId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContactPropertyUpdateRequest" },
+              "example": { "fallback_value": "Unknown" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact property updated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactPropertyMutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteContactProperty",
+        "summary": "Delete Contact Property",
+        "description": "Deletes a contact property definition from the authenticated team.",
+        "tags": ["Contact Properties"],
+        "parameters": [{ "$ref": "#/components/parameters/ContactPropertyId" }],
+        "responses": {
+          "200": {
+            "description": "Contact property deleted successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactPropertyDeleteEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/topics": {
       "get": {
         "operationId": "listTopics",
@@ -1301,6 +1406,7 @@
       "DomainId": { "name": "domain_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "SenderId": { "name": "sender_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "ContactId": { "name": "contact_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "ContactPropertyId": { "name": "property_id", "in": "path", "required": true, "description": "Contact property UUID.", "schema": { "type": "string", "format": "uuid" } },
       "TopicId": { "name": "topic_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "SegmentId": { "name": "segment_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "BroadcastId": { "name": "broadcast", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
@@ -1788,6 +1894,107 @@
       },
       "ContactEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/ContactResource" } } },
       "ContactListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/ContactResource" } } } },
+      "ContactPropertyValue": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "null" }
+        ],
+        "description": "Fallback value. Non-null values must match the contact property's declared type."
+      },
+      "ContactPropertyCreateRequest": {
+        "type": "object",
+        "required": ["key", "type"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1, "maxLength": 50, "pattern": "^[A-Za-z0-9_]+$", "description": "Unique property key containing only letters, numbers, and underscores." },
+          "type": { "type": "string", "enum": ["string", "number"], "description": "Declared value type for the property." },
+          "fallback_value": { "$ref": "#/components/schemas/ContactPropertyValue" }
+        },
+        "additionalProperties": false
+      },
+      "ContactPropertyUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "fallback_value": { "$ref": "#/components/schemas/ContactPropertyValue" }
+        },
+        "additionalProperties": false
+      },
+      "ContactPropertyMutation": {
+        "type": "object",
+        "required": ["object", "id"],
+        "properties": {
+          "object": { "type": "string", "enum": ["contact_property"] },
+          "id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "ContactPropertyResource": {
+        "type": "object",
+        "required": ["object", "id", "key", "type", "created_at"],
+        "properties": {
+          "object": { "type": "string", "enum": ["contact_property"] },
+          "id": { "type": "string", "format": "uuid" },
+          "key": { "type": "string" },
+          "type": { "type": "string", "enum": ["string", "number"] },
+          "fallback_value": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "number" }
+            ],
+            "description": "Configured fallback value. Omitted when no fallback is set."
+          },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ContactPropertyList": {
+        "type": "object",
+        "required": ["object", "has_more", "data"],
+        "properties": {
+          "object": { "type": "string", "enum": ["list"] },
+          "has_more": { "type": "boolean" },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ContactPropertyResource" } }
+        }
+      },
+      "ContactPropertyDelete": {
+        "type": "object",
+        "required": ["object", "id", "deleted"],
+        "properties": {
+          "object": { "type": "string", "enum": ["contact_property"] },
+          "id": { "type": "string", "format": "uuid" },
+          "deleted": { "type": "boolean", "enum": [true] }
+        }
+      },
+      "ContactPropertyMutationEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/ContactPropertyMutation" }
+        }
+      },
+      "ContactPropertyEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/ContactPropertyResource" }
+        }
+      },
+      "ContactPropertyListEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/ContactPropertyList" }
+        }
+      },
+      "ContactPropertyDeleteEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/ContactPropertyDelete" }
+        }
+      },
       "ContactTopic": {
         "type": "object",
         "required": ["id", "name", "subscription"],
