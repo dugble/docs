@@ -1,8 +1,67 @@
 ---
-title: Contacts introduction
-"sidebarTitle": "Overview"
+title: Contacts
+description: Store recipient profiles, consent state, and audience memberships in Dugble.
 ---
 
-# Contacts
+Contacts are recipient profiles that your team can reuse across audience and messaging workflows. A contact can store an email address, phone number, name, SMS consent state, custom properties, topic subscriptions, and segment memberships.
 
-Placeholder: Introduction to contacts and contact management.
+## Contact data
+
+A contact can include:
+
+- `email` — required and unique within the team.
+- `phone` — optional international phone number.
+- `first_name` and `last_name` — optional profile fields.
+- `sms_consent_status` — `unknown`, `opted_in`, or `opted_out`.
+- `sms_consent_source` — `api`, `import`, or `manual` when explicit SMS consent is recorded.
+- `unsubscribed` — email unsubscribe state.
+- `properties` — application-specific contact data.
+
+Dugble normalizes valid phone numbers to E.164 and records the detected country.
+
+<Warning>
+A contact with the same email address or phone number cannot be created twice within the same team.
+</Warning>
+
+## Create a contact
+
+```bash
+curl --request POST \
+  --url https://api.dugble.com/contacts \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "email": "ada@example.com",
+    "phone": "+233201234567",
+    "first_name": "Ada",
+    "last_name": "Lovelace",
+    "sms_consent_status": "opted_in",
+    "sms_consent_source": "api",
+    "properties": {
+      "plan": "pro",
+      "company": "Analytical Engines"
+    }
+  }'
+```
+
+## Build audiences with contacts
+
+Contacts become reusable audiences through two complementary features:
+
+- **Topics** represent subscription preferences, such as product updates or newsletters.
+- **Segments** group contacts for targeting and bulk messaging workflows.
+
+<CardGroup cols={2}>
+  <Card title="Managing contacts" href="/contacts/managing-contacts">
+    Create, update, retrieve, and delete contacts.
+  </Card>
+  <Card title="Properties and consent" href="/contacts/properties-and-consent">
+    Store custom data and SMS consent safely.
+  </Card>
+  <Card title="Topics" href="/topics/introduction">
+    Model subscription preferences for contacts.
+  </Card>
+  <Card title="Segments" href="/segments/introduction">
+    Organize contacts into reusable audiences.
+  </Card>
+</CardGroup>
