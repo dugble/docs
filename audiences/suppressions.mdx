@@ -1,0 +1,32 @@
+---
+title: Suppressions
+description: Understand how suppression rules protect recipients from unwanted email delivery.
+---
+
+Suppressions prevent email from being sent to addresses that should no longer receive mail.
+
+They are evaluated separately from segments and topic preferences, so a contact can be selected for an audience and still be excluded from delivery.
+
+## Suppression origins
+
+Dugble tracks why an address is suppressed. The current origins are:
+
+- `bounce` — the address was suppressed after a delivery failure.
+- `complaint` — the address was suppressed after a complaint signal.
+- `manual` — the address was added directly by your team.
+
+## Suppressions override targeting
+
+Segments answer who you want to target. Topics and subscriptions answer what a contact wants to receive. Suppressions answer whether an email address should be attempted at all.
+
+Because of that, suppression status can make a recipient ineligible even when segment membership and topic preference would otherwise allow the message.
+
+## Suppression and unsubscribe are different
+
+A contact's `unsubscribed` state is a recipient preference stored on the contact. A suppression is a delivery restriction associated with the email address.
+
+Treat them as separate signals and preserve both when they are relevant to your application.
+
+## API details
+
+For adding, retrieving, filtering, removing, or batch-managing suppressions, see the Suppressions section in the API Reference.
