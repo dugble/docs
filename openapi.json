@@ -118,6 +118,7 @@
       "get": {
         "operationId": "getEmail",
         "summary": "Retrieve Email",
+        "description": "Retrieves a single email message by its Dugble message ID.",
         "tags": ["Email"],
         "parameters": [{ "$ref": "#/components/parameters/MessageId" }],
         "responses": {
@@ -154,6 +155,7 @@
       "post": {
         "operationId": "cancelEmail",
         "summary": "Cancel Email",
+        "description": "Cancels an email that is still queued for scheduled delivery.",
         "tags": ["Email"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -191,6 +193,7 @@
       "get": {
         "operationId": "listSmsMessages",
         "summary": "List SMS",
+        "description": "Returns SMS messages belonging to the authenticated team.",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
@@ -271,6 +274,7 @@
       "get": {
         "operationId": "getSmsMessage",
         "summary": "Retrieve SMS",
+        "description": "Retrieves a single SMS message by its Dugble message ID.",
         "tags": ["SMS"],
         "parameters": [{ "$ref": "#/components/parameters/MessageId" }],
         "responses": {
@@ -284,6 +288,7 @@
       "patch": {
         "operationId": "updateSmsMessage",
         "summary": "Update SMS",
+        "description": "Changes the delivery time of an SMS that is still queued for scheduled delivery.",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -306,6 +311,7 @@
       "post": {
         "operationId": "cancelSmsMessage",
         "summary": "Cancel SMS",
+        "description": "Cancels an SMS that is still queued for scheduled delivery.",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -362,6 +368,7 @@
       "get": {
         "operationId": "listDomains",
         "summary": "List Domains",
+        "description": "Returns sending domains configured for the authenticated team.",
         "tags": ["Domains"],
         "responses": {
           "200": {
@@ -415,6 +422,7 @@
       "get": {
         "operationId": "getDomain",
         "summary": "Retrieve Domain",
+        "description": "Retrieves a sending domain and its current verification state.",
         "tags": ["Domains"],
         "parameters": [{ "$ref": "#/components/parameters/DomainId" }],
         "responses": {
@@ -428,6 +436,7 @@
       "delete": {
         "operationId": "deleteDomain",
         "summary": "Delete Domain",
+        "description": "Removes a sending domain from the authenticated team.",
         "tags": ["Domains"],
         "parameters": [
           { "$ref": "#/components/parameters/DomainId" },
@@ -465,6 +474,7 @@
       "get": {
         "operationId": "listSenderIds",
         "summary": "List Sender IDs",
+        "description": "Returns SMS sender IDs belonging to the authenticated team.",
         "tags": ["Sender IDs"],
         "responses": {
           "200": {
@@ -477,6 +487,7 @@
       "post": {
         "operationId": "createSenderId",
         "summary": "Create Sender ID",
+        "description": "Creates a new SMS sender ID for a specific country and sending purpose.",
         "tags": ["Sender IDs"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -501,6 +512,7 @@
       "get": {
         "operationId": "getSenderId",
         "summary": "Retrieve Sender ID",
+        "description": "Retrieves a single SMS sender ID and its current approval status.",
         "tags": ["Sender IDs"],
         "parameters": [{ "$ref": "#/components/parameters/SenderId" }],
         "responses": {
@@ -533,6 +545,7 @@
       "get": {
         "operationId": "listContacts",
         "summary": "List Contacts",
+        "description": "Returns contacts belonging to the authenticated team.",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
@@ -549,6 +562,7 @@
       "post": {
         "operationId": "createContact",
         "summary": "Create Contact",
+        "description": "Creates a contact with email, phone, consent, and custom property data.",
         "tags": ["Contacts"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -580,6 +594,7 @@
       "get": {
         "operationId": "getContact",
         "summary": "Retrieve Contact",
+        "description": "Retrieves a single contact by ID.",
         "tags": ["Contacts"],
         "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
         "responses": {
@@ -593,6 +608,7 @@
       "patch": {
         "operationId": "updateContact",
         "summary": "Update Contact",
+        "description": "Updates the mutable fields of an existing contact.",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -613,6 +629,7 @@
       "delete": {
         "operationId": "deleteContact",
         "summary": "Delete Contact",
+        "description": "Deletes a contact from the authenticated team.",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -631,6 +648,7 @@
       "get": {
         "operationId": "listContactTopics",
         "summary": "List Contact Topics",
+        "description": "Returns the topics associated with a contact and the contact's subscription state for each topic.",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -649,6 +667,7 @@
       "patch": {
         "operationId": "updateContactTopics",
         "summary": "Update Contact Topics",
+        "description": "Updates a contact's opt-in or opt-out state for one or more topics.",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -671,6 +690,7 @@
       "get": {
         "operationId": "listContactSegments",
         "summary": "List Contact Segments",
+        "description": "Returns the segments that currently include the contact.",
         "tags": ["Contacts"],
         "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
         "responses": {
@@ -686,6 +706,7 @@
       "post": {
         "operationId": "addContactToSegment",
         "summary": "Add Contact to Segment",
+        "description": "Adds a contact to a segment. Repeating the operation for an existing membership is safe.",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -707,6 +728,7 @@
       "delete": {
         "operationId": "removeContactFromSegment",
         "summary": "Remove Contact from Segment",
+        "description": "Removes a contact's membership from a segment.",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -723,6 +745,7 @@
       "get": {
         "operationId": "listTopics",
         "summary": "List Topics",
+        "description": "Returns subscription topics configured for the authenticated team.",
         "tags": ["Topics"],
         "parameters": [
           { "$ref": "#/components/parameters/CursorLimit" },
@@ -740,6 +763,7 @@
       "post": {
         "operationId": "createTopic",
         "summary": "Create Topic",
+        "description": "Creates a subscription topic with a default subscription state and visibility.",
         "tags": ["Topics"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -764,6 +788,7 @@
       "get": {
         "operationId": "getTopic",
         "summary": "Retrieve Topic",
+        "description": "Retrieves a single subscription topic by ID.",
         "tags": ["Topics"],
         "parameters": [{ "$ref": "#/components/parameters/TopicId" }],
         "responses": {
@@ -777,6 +802,7 @@
       "patch": {
         "operationId": "updateTopic",
         "summary": "Update Topic",
+        "description": "Updates the name, description, or visibility of a subscription topic.",
         "tags": ["Topics"],
         "parameters": [
           { "$ref": "#/components/parameters/TopicId" },
@@ -797,6 +823,7 @@
       "delete": {
         "operationId": "deleteTopic",
         "summary": "Delete Topic",
+        "description": "Deletes a subscription topic from the authenticated team.",
         "tags": ["Topics"],
         "parameters": [
           { "$ref": "#/components/parameters/TopicId" },
@@ -815,6 +842,7 @@
       "get": {
         "operationId": "listSegments",
         "summary": "List Segments",
+        "description": "Returns audience segments belonging to the authenticated team.",
         "tags": ["Segments"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
@@ -831,6 +859,7 @@
       "post": {
         "operationId": "createSegment",
         "summary": "Create Segment",
+        "description": "Creates a new audience segment for organizing contacts.",
         "tags": ["Segments"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -850,6 +879,7 @@
       "get": {
         "operationId": "getSegment",
         "summary": "Retrieve Segment",
+        "description": "Retrieves a single audience segment by ID.",
         "tags": ["Segments"],
         "parameters": [{ "$ref": "#/components/parameters/SegmentId" }],
         "responses": {
@@ -863,6 +893,7 @@
       "delete": {
         "operationId": "deleteSegment",
         "summary": "Delete Segment",
+        "description": "Deletes an audience segment from the authenticated team.",
         "tags": ["Segments"],
         "parameters": [
           { "$ref": "#/components/parameters/SegmentId" },
@@ -881,6 +912,7 @@
       "get": {
         "operationId": "listSegmentContacts",
         "summary": "List Segment Contacts",
+        "description": "Returns contacts that are currently members of the segment.",
         "tags": ["Segments"],
         "parameters": [
           { "$ref": "#/components/parameters/SegmentId" },
@@ -900,6 +932,7 @@
       "get": {
         "operationId": "listSuppressions",
         "summary": "List Suppressions",
+        "description": "Returns suppressed email addresses for the authenticated team, optionally filtered by origin.",
         "tags": ["Suppressions"],
         "parameters": [
           { "$ref": "#/components/parameters/CursorLimit" },
@@ -924,6 +957,7 @@
       "post": {
         "operationId": "createSuppression",
         "summary": "Create Suppression",
+        "description": "Adds an email address to the team's suppression list.",
         "tags": ["Suppressions"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -943,6 +977,7 @@
       "post": {
         "operationId": "batchAddSuppressions",
         "summary": "Add Suppressions",
+        "description": "Adds up to 100 email addresses to the team's suppression list in one request.",
         "tags": ["Suppressions"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -962,7 +997,7 @@
       "post": {
         "operationId": "batchRemoveSuppressions",
         "summary": "Remove Suppressions",
-        "description": "Provide either `emails` or `ids`, but not both. Each batch supports up to 100 suppressions.",
+        "description": "Removes up to 100 suppressions by email address or suppression ID. Provide either `emails` or `ids`, but not both.",
         "tags": ["Suppressions"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -982,7 +1017,7 @@
       "get": {
         "operationId": "getSuppression",
         "summary": "Retrieve Suppression",
-        "description": "The identifier may be a suppression UUID or an email address.",
+        "description": "Retrieves a suppression by UUID or email address.",
         "tags": ["Suppressions"],
         "parameters": [{ "$ref": "#/components/parameters/SuppressionIdentifier" }],
         "responses": {
@@ -996,7 +1031,7 @@
       "delete": {
         "operationId": "deleteSuppression",
         "summary": "Delete Suppression",
-        "description": "The identifier may be a suppression UUID or an email address.",
+        "description": "Removes a suppression by UUID or email address.",
         "tags": ["Suppressions"],
         "parameters": [
           { "$ref": "#/components/parameters/SuppressionIdentifier" },
@@ -1015,6 +1050,7 @@
       "get": {
         "operationId": "listBroadcasts",
         "summary": "List Broadcasts",
+        "description": "Returns broadcasts belonging to the authenticated team.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
@@ -1031,6 +1067,7 @@
       "post": {
         "operationId": "createBroadcast",
         "summary": "Create Broadcast",
+        "description": "Creates a draft broadcast for a segment using a message template.",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -1059,6 +1096,7 @@
       "get": {
         "operationId": "getBroadcast",
         "summary": "Retrieve Broadcast",
+        "description": "Retrieves a single broadcast by ID, including its current delivery state and audience counts.",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/BroadcastId" }],
         "responses": {
@@ -1072,7 +1110,7 @@
       "patch": {
         "operationId": "updateBroadcast",
         "summary": "Update Broadcast",
-        "description": "Only draft broadcasts can be updated. Supply the current revision for optimistic concurrency control.",
+        "description": "Updates a draft broadcast. Supply the current revision for optimistic concurrency control.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1093,7 +1131,7 @@
       "delete": {
         "operationId": "deleteBroadcast",
         "summary": "Delete Broadcast",
-        "description": "Only draft or canceled broadcasts can be deleted.",
+        "description": "Deletes a broadcast that is still in draft or canceled state.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1135,7 +1173,7 @@
       "post": {
         "operationId": "cancelBroadcast",
         "summary": "Cancel Broadcast",
-        "description": "Cancels a scheduled broadcast.",
+        "description": "Cancels a broadcast that is currently scheduled for future delivery.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1154,6 +1192,7 @@
       "post": {
         "operationId": "duplicateBroadcast",
         "summary": "Duplicate Broadcast",
+        "description": "Creates a new draft broadcast using the configuration of an existing broadcast.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1176,6 +1215,7 @@
       "post": {
         "operationId": "previewBroadcast",
         "summary": "Preview Broadcast",
+        "description": "Renders the broadcast template with optional preview variables without sending it.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1198,6 +1238,7 @@
       "get": {
         "operationId": "listBroadcastRecipients",
         "summary": "List Broadcast Recipients",
+        "description": "Returns recipients captured for the broadcast, including delivery and exclusion state.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1217,6 +1258,7 @@
       "get": {
         "operationId": "getBroadcastExclusions",
         "summary": "Get Broadcast Exclusions",
+        "description": "Returns the number of excluded broadcast recipients grouped by exclusion reason.",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/BroadcastId" }],
         "responses": {
@@ -1232,6 +1274,7 @@
       "get": {
         "operationId": "getBroadcastAnalytics",
         "summary": "Get Broadcast Analytics",
+        "description": "Returns aggregate delivery, bounce, complaint, open, and click metrics for the broadcast.",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/BroadcastId" }],
         "responses": {
