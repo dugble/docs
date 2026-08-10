@@ -16,7 +16,10 @@
         "groups": [
           {
             "group": "Getting Started",
-            "pages": ["overview", "quickstart"]
+            "pages": [
+              "overview",
+              "quickstart"
+            ]
           },
           {
             "group": "Email",
@@ -39,7 +42,10 @@
           },
           {
             "group": "Domains",
-            "pages": ["domains/introduction", "domains/dmarc"]
+            "pages": [
+              "domains/introduction",
+              "domains/dmarc"
+            ]
           },
           {
             "group": "Webhooks",
@@ -149,11 +155,11 @@
             "group": "Suppressions",
             "pages": [
               "POST /suppressions",
-              "POST /suppressions/batch/add",
-              "POST /suppressions/batch/remove",
               "GET /suppressions",
               "GET /suppressions/{suppression}",
-              "DELETE /suppressions/{suppression}"
+              "DELETE /suppressions/{suppression}",
+              "POST /suppressions/batch/add",
+              "POST /suppressions/batch/remove"
             ]
           },
           {
@@ -171,13 +177,6 @@
               "GET /broadcasts/{broadcast}/recipients",
               "GET /broadcasts/{broadcast}/exclusions",
               "GET /broadcasts/{broadcast}/analytics"
-            ]
-          },
-          {
-            "group": "Wallet",
-            "pages": [
-              "GET /wallet",
-              "GET /wallet/ledger"
             ]
           }
         ]
