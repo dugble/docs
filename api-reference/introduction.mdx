@@ -1,5 +1,73 @@
 ---
 title: API Reference
+description: Build with the Dugble API for email and SMS.
 ---
 
-Placeholder: High-level overview and links to service endpoints. Add detailed reference pages per resource (Requests, Responses, Errors, Examples).
+The Dugble API lets you send, schedule, inspect, update, and cancel email and SMS messages from your applications.
+
+## Base URL
+
+```text
+https://api.dugble.com
+```
+
+## Authentication
+
+Authenticate API requests with a Dugble team token using Bearer authentication.
+
+```http
+Authorization: Bearer dgb_team_...
+```
+
+See [Authentication](/api-reference/authentication) for token behavior and permissions.
+
+## Request format
+
+Send JSON payloads with:
+
+```http
+Content-Type: application/json
+Accept: application/json
+```
+
+Mutation requests can include an `Idempotency-Key` header so retries do not create duplicate operations.
+
+```http
+Idempotency-Key: welcome-user-42
+```
+
+See [Idempotency](/api-reference/idempotency) for details.
+
+## Response envelope
+
+Successful JSON responses use the standard Dugble envelope:
+
+```json
+{
+  "success": true,
+  "data": {}
+}
+```
+
+Errors use:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Public error message"
+  }
+}
+```
+
+See [Errors](/api-reference/errors) for the public error codes returned by the API.
+
+## API sections
+
+The current public reference covers:
+
+- **Email** — send, batch send, list, retrieve, reschedule, and cancel messages.
+- **SMS** — send, batch send, list, retrieve, reschedule, cancel, and synchronize message status.
+
+The endpoint pages in this section are generated from Dugble's OpenAPI specification.
