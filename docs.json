@@ -162,6 +162,17 @@
             ]
           },
           {
+            "group": "Contact Properties",
+            "openapi": "/openapi-contact-properties.json",
+            "pages": [
+              "POST /contact-properties",
+              "GET /contact-properties",
+              "GET /contact-properties/{property_id}",
+              "PATCH /contact-properties/{property_id}",
+              "DELETE /contact-properties/{property_id}"
+            ]
+          },
+          {
             "group": "Topics",
             "pages": [
               "POST /topics",
