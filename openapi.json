@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Dugble Email and SMS API",
-    "description": "Send, schedule, inspect, update, and cancel email and SMS messages with Dugble. All endpoints require a team token sent as a Bearer token.",
+    "title": "Dugble API",
+    "description": "Programmatic access to Dugble email, SMS, sending infrastructure, contacts, audiences, suppressions, broadcasts, and wallet data. Authenticate with a team token sent as a Bearer token.",
     "version": "1.0.0",
     "contact": {
       "name": "Dugble Support",
@@ -21,87 +21,52 @@
     }
   ],
   "tags": [
-    {
-      "name": "Email",
-      "description": "Send and manage transactional emails."
-    },
-    {
-      "name": "SMS",
-      "description": "Send and manage SMS messages."
-    }
+    { "name": "Email", "description": "Send and manage transactional emails." },
+    { "name": "SMS", "description": "Send and manage SMS messages." },
+    { "name": "Domains", "description": "Manage and verify sending domains." },
+    { "name": "Sender IDs", "description": "Manage SMS sender IDs." },
+    { "name": "Contacts", "description": "Manage contacts and their audience memberships." },
+    { "name": "Topics", "description": "Manage contact subscription topics." },
+    { "name": "Segments", "description": "Manage audience segments." },
+    { "name": "Suppressions", "description": "Manage suppressed email recipients." },
+    { "name": "Broadcasts", "description": "Create, schedule, and analyze email broadcasts." },
+    { "name": "Wallet", "description": "Inspect team wallet balances and ledger entries." }
   ],
   "paths": {
     "/emails": {
       "get": {
         "operationId": "listEmails",
         "summary": "List emails",
-        "description": "Returns emails belonging to the authenticated team, newest first.",
-        "tags": [
-          "Email"
-        ],
+        "description": "Returns email messages belonging to the authenticated team.",
+        "tags": ["Email"],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/Limit"
-          },
-          {
-            "$ref": "#/components/parameters/Offset"
-          }
+          { "$ref": "#/components/parameters/LimitOffset" },
+          { "$ref": "#/components/parameters/Offset" }
         ],
         "responses": {
           "200": {
             "description": "Emails retrieved successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EmailListEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmailListEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       },
       "post": {
         "operationId": "sendEmail",
         "summary": "Send an email",
-        "description": "Queues an email for immediate or scheduled delivery. The `to`, `cc`, `bcc`, and `reply_to` fields accept either one address or an array. Addresses may be strings such as `Ada <ada@example.com>` or structured objects.",
-        "tags": [
-          "Email"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
-        ],
+        "description": "Queues an email for immediate or scheduled delivery.",
+        "tags": ["Email"],
+        "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmailSendRequest"
-              },
+              "schema": { "$ref": "#/components/schemas/EmailSendRequest" },
               "example": {
                 "from": "Dugble <notifications@example.com>",
-                "to": [
-                  "Ada <ada@example.com>"
-                ],
+                "to": "ada@example.com",
                 "subject": "Welcome to Dugble",
-                "html": "<h1>Welcome!</h1><p>Your account is ready.</p>",
-                "text": "Welcome! Your account is ready.",
-                "tags": [
-                  {
-                    "name": "category",
-                    "value": "welcome"
-                  }
-                ]
+                "html": "<h1>Welcome!</h1><p>Your account is ready.</p>"
               }
             }
           }
@@ -112,29 +77,12 @@
             "headers": {
               "Location": {
                 "description": "Relative URL of the queued email.",
-                "schema": {
-                  "type": "string",
-                  "example": "/emails/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794"
-                }
+                "schema": { "type": "string", "example": "/emails/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794" }
               }
             },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EmailAcceptedEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       }
     },
@@ -142,66 +90,28 @@
       "post": {
         "operationId": "sendEmailBatch",
         "summary": "Send a batch of emails",
-        "description": "Atomically queues up to 100 emails. Attachments are not supported in batch requests. The response IDs remain in request order. A top-level array is preferred; an object containing a `messages` array is also accepted.",
-        "tags": [
-          "Email"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
-        ],
+        "description": "Atomically queues up to 100 emails. Attachments are not supported in batch requests. A top-level array is preferred; an object containing a `messages` array is also accepted.",
+        "tags": ["Email"],
+        "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/EmailBatchArray"
-                  },
-                  {
-                    "$ref": "#/components/schemas/EmailBatchObject"
-                  }
+                  { "$ref": "#/components/schemas/EmailBatchArray" },
+                  { "$ref": "#/components/schemas/EmailBatchObject" }
                 ]
-              },
-              "example": [
-                {
-                  "to": "ada@example.com",
-                  "subject": "Hello Ada",
-                  "html": "<p>Hello Ada!</p>"
-                },
-                {
-                  "to": [
-                    "grace@example.com"
-                  ],
-                  "subject": "Hello Grace",
-                  "text": "Hello Grace!"
-                }
-              ]
+              }
             }
           }
         },
         "responses": {
           "202": {
             "description": "All emails accepted for asynchronous delivery.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EmailBatchAcceptedEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationListEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       }
     },
@@ -209,85 +119,35 @@
       "get": {
         "operationId": "getEmail",
         "summary": "Retrieve an email",
-        "description": "Retrieves one email belonging to the authenticated team.",
-        "tags": [
-          "Email"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/MessageId"
-          }
-        ],
+        "tags": ["Email"],
+        "parameters": [{ "$ref": "#/components/parameters/MessageId" }],
         "responses": {
           "200": {
             "description": "Email retrieved successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EmailEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmailEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       },
       "patch": {
         "operationId": "updateEmail",
         "summary": "Update a scheduled email",
         "description": "Changes the delivery time of an email that is still queued for scheduled delivery.",
-        "tags": [
-          "Email"
-        ],
+        "tags": ["Email"],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/MessageId"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
+          { "$ref": "#/components/parameters/MessageId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
         ],
         "requestBody": {
           "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ScheduleUpdateRequest"
-              },
-              "example": {
-                "scheduled_at": "2026-08-05T11:52:01.858Z"
-              }
-            }
-          }
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScheduleUpdateRequest" } } }
         },
         "responses": {
           "200": {
             "description": "Email schedule updated successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EmailMutationEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       }
     },
@@ -295,38 +155,36 @@
       "post": {
         "operationId": "cancelEmail",
         "summary": "Cancel a scheduled email",
-        "description": "Cancels an email that is still queued for scheduled delivery.",
-        "tags": [
-          "Email"
-        ],
+        "tags": ["Email"],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/MessageId"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
+          { "$ref": "#/components/parameters/MessageId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
         ],
         "responses": {
           "200": {
             "description": "Email canceled successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EmailMutationEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/emails/{message_id}/events": {
+      "get": {
+        "operationId": "listEmailEvents",
+        "summary": "List email events",
+        "description": "Returns delivery events for an email message.",
+        "tags": ["Email"],
+        "parameters": [
+          { "$ref": "#/components/parameters/MessageId" },
+          { "$ref": "#/components/parameters/LimitOffset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email events retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventListEnvelope" } } }
           },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       }
     },
@@ -334,69 +192,34 @@
       "get": {
         "operationId": "listSmsMessages",
         "summary": "List SMS messages",
-        "description": "Returns SMS messages belonging to the authenticated team, newest first.",
-        "tags": [
-          "SMS"
-        ],
+        "tags": ["SMS"],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/Limit"
-          },
-          {
-            "$ref": "#/components/parameters/Offset"
-          }
+          { "$ref": "#/components/parameters/LimitOffset" },
+          { "$ref": "#/components/parameters/Offset" }
         ],
         "responses": {
           "200": {
             "description": "SMS messages retrieved successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SmsListEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SmsListEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       },
       "post": {
         "operationId": "sendSms",
         "summary": "Send an SMS",
-        "description": "Queues an SMS for immediate or scheduled delivery. Recipient numbers must use E.164 format.",
-        "tags": [
-          "SMS"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
-        ],
+        "description": "Queues an SMS for immediate or scheduled delivery. Recipient numbers must use international format.",
+        "tags": ["SMS"],
+        "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SmsSendRequest"
-              },
+              "schema": { "$ref": "#/components/schemas/SmsSendRequest" },
               "example": {
                 "to": "+233201234567",
                 "from": "Dugble",
-                "body": "Your verification code is 123456.",
-                "tags": [
-                  {
-                    "name": "category",
-                    "value": "verification"
-                  }
-                ]
+                "body": "Your verification code is 123456."
               }
             }
           }
@@ -407,29 +230,12 @@
             "headers": {
               "Location": {
                 "description": "Relative URL of the queued SMS.",
-                "schema": {
-                  "type": "string",
-                  "example": "/sms/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794"
-                }
+                "schema": { "type": "string", "example": "/sms/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794" }
               }
             },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SmsAcceptedEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       }
     },
@@ -437,64 +243,28 @@
       "post": {
         "operationId": "sendSmsBatch",
         "summary": "Send a batch of SMS messages",
-        "description": "Atomically validates, prices, charges, and queues up to 100 SMS messages. Response IDs remain in request order. A top-level array is preferred; an object containing a `messages` array is also accepted.",
-        "tags": [
-          "SMS"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
-        ],
+        "description": "Atomically validates, prices, charges, and queues up to 100 SMS messages. A top-level array is preferred; an object containing a `messages` array is also accepted.",
+        "tags": ["SMS"],
+        "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/SmsBatchArray"
-                  },
-                  {
-                    "$ref": "#/components/schemas/SmsBatchObject"
-                  }
+                  { "$ref": "#/components/schemas/SmsBatchArray" },
+                  { "$ref": "#/components/schemas/SmsBatchObject" }
                 ]
-              },
-              "example": [
-                {
-                  "to": "+233201234567",
-                  "from": "Dugble",
-                  "body": "Hello Ada!"
-                },
-                {
-                  "to": "+233241234567",
-                  "from": "Dugble",
-                  "body": "Hello Grace!"
-                }
-              ]
+              }
             }
           }
         },
         "responses": {
           "202": {
             "description": "All SMS messages accepted for asynchronous delivery.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SmsBatchAcceptedEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationListEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       }
     },
@@ -502,85 +272,34 @@
       "get": {
         "operationId": "getSmsMessage",
         "summary": "Retrieve an SMS",
-        "description": "Retrieves one SMS message belonging to the authenticated team.",
-        "tags": [
-          "SMS"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/MessageId"
-          }
-        ],
+        "tags": ["SMS"],
+        "parameters": [{ "$ref": "#/components/parameters/MessageId" }],
         "responses": {
           "200": {
             "description": "SMS retrieved successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SmsEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SmsEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       },
       "patch": {
         "operationId": "updateSmsMessage",
         "summary": "Update a scheduled SMS",
-        "description": "Changes the delivery time of an SMS that is still queued for scheduled delivery.",
-        "tags": [
-          "SMS"
-        ],
+        "tags": ["SMS"],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/MessageId"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
+          { "$ref": "#/components/parameters/MessageId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
         ],
         "requestBody": {
           "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ScheduleUpdateRequest"
-              },
-              "example": {
-                "scheduled_at": "2026-08-05T11:52:01.858Z"
-              }
-            }
-          }
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScheduleUpdateRequest" } } }
         },
         "responses": {
           "200": {
             "description": "SMS schedule updated successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SmsMutationEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       }
     },
@@ -588,38 +307,36 @@
       "post": {
         "operationId": "cancelSmsMessage",
         "summary": "Cancel a scheduled SMS",
-        "description": "Cancels an SMS that is still queued for scheduled delivery.",
-        "tags": [
-          "SMS"
-        ],
+        "tags": ["SMS"],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/MessageId"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
+          { "$ref": "#/components/parameters/MessageId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
         ],
         "responses": {
           "200": {
             "description": "SMS canceled successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SmsMutationEnvelope"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
           },
-          "default": {
-            "$ref": "#/components/responses/Error"
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/sms/{message_id}/events": {
+      "get": {
+        "operationId": "listSmsEvents",
+        "summary": "List SMS events",
+        "description": "Returns delivery events for an SMS message.",
+        "tags": ["SMS"],
+        "parameters": [
+          { "$ref": "#/components/parameters/MessageId" },
+          { "$ref": "#/components/parameters/LimitOffset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "SMS events retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventListEnvelope" } } }
           },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
-          }
+          "default": { "$ref": "#/components/responses/Error" }
         }
       }
     },
@@ -627,38 +344,935 @@
       "post": {
         "operationId": "syncSmsStatus",
         "summary": "Sync SMS delivery status",
-        "description": "Refreshes the SMS delivery status from its provider and returns the latest message state.",
-        "tags": [
-          "SMS"
-        ],
+        "description": "Refreshes the delivery status from the SMS provider.",
+        "tags": ["SMS"],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/MessageId"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
+          { "$ref": "#/components/parameters/MessageId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
         ],
         "responses": {
           "200": {
             "description": "SMS status synchronized successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SmsEnvelope"
-                }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SmsEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/domains": {
+      "get": {
+        "operationId": "listDomains",
+        "summary": "List domains",
+        "tags": ["Domains"],
+        "responses": {
+          "200": {
+            "description": "Sending domains retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createDomain",
+        "summary": "Create a domain",
+        "description": "Creates and provisions a sending domain. Provisioning may be asynchronous while email infrastructure is being prepared.",
+        "tags": ["Domains"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DomainCreateRequest" },
+              "example": {
+                "name": "mail.example.com",
+                "region": "us-east-1",
+                "open_tracking": true,
+                "click_tracking": false,
+                "tls": "opportunistic"
               }
             }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "401": {
-            "$ref": "#/components/responses/Error"
           }
+        },
+        "responses": {
+          "201": {
+            "description": "Domain created and provisioned.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainEnvelope" } } }
+          },
+          "202": {
+            "description": "Domain accepted while infrastructure provisioning completes.",
+            "headers": {
+              "Retry-After": {
+                "description": "Suggested delay before checking again.",
+                "schema": { "type": "integer" }
+              }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProvisioningEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/domains/{domain_id}": {
+      "get": {
+        "operationId": "getDomain",
+        "summary": "Retrieve a domain",
+        "tags": ["Domains"],
+        "parameters": [{ "$ref": "#/components/parameters/DomainId" }],
+        "responses": {
+          "200": {
+            "description": "Domain retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteDomain",
+        "summary": "Delete a domain",
+        "tags": ["Domains"],
+        "parameters": [
+          { "$ref": "#/components/parameters/DomainId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain deleted successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/domains/{domain_id}/verify": {
+      "post": {
+        "operationId": "verifyDomain",
+        "summary": "Verify a domain",
+        "description": "Checks the domain's provider and DNS verification state and returns the updated domain.",
+        "tags": ["Domains"],
+        "parameters": [
+          { "$ref": "#/components/parameters/DomainId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain verification checked successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/sender-ids": {
+      "get": {
+        "operationId": "listSenderIds",
+        "summary": "List sender IDs",
+        "tags": ["Sender IDs"],
+        "responses": {
+          "200": {
+            "description": "Sender IDs retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SenderIdListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createSenderId",
+        "summary": "Create a sender ID",
+        "tags": ["Sender IDs"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SenderIdCreateRequest" },
+              "example": { "name": "DUGBLE", "country_code": "GH", "purpose": "Transactional notifications" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sender ID created successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SenderIdEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/sender-ids/{sender_id}": {
+      "get": {
+        "operationId": "getSenderId",
+        "summary": "Retrieve a sender ID",
+        "tags": ["Sender IDs"],
+        "parameters": [{ "$ref": "#/components/parameters/SenderId" }],
+        "responses": {
+          "200": {
+            "description": "Sender ID retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SenderIdEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSenderId",
+        "summary": "Delete a sender ID",
+        "description": "Deactivates the sender ID and returns its updated state.",
+        "tags": ["Sender IDs"],
+        "parameters": [
+          { "$ref": "#/components/parameters/SenderId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sender ID deactivated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SenderIdEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/contacts": {
+      "get": {
+        "operationId": "listContacts",
+        "summary": "List contacts",
+        "tags": ["Contacts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/LimitOffset" },
+          { "$ref": "#/components/parameters/Offset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contacts retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createContact",
+        "summary": "Create a contact",
+        "tags": ["Contacts"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContactCreateRequest" },
+              "example": {
+                "email": "ada@example.com",
+                "phone": "+233201234567",
+                "first_name": "Ada",
+                "last_name": "Lovelace",
+                "sms_consent_status": "opted_in",
+                "sms_consent_source": "api"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contact created successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/contacts/{contact_id}": {
+      "get": {
+        "operationId": "getContact",
+        "summary": "Retrieve a contact",
+        "tags": ["Contacts"],
+        "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
+        "responses": {
+          "200": {
+            "description": "Contact retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "operationId": "updateContact",
+        "summary": "Update a contact",
+        "tags": ["Contacts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ContactId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact updated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteContact",
+        "summary": "Delete a contact",
+        "tags": ["Contacts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ContactId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact deleted successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/contacts/{contact_id}/topics": {
+      "get": {
+        "operationId": "listContactTopics",
+        "summary": "List contact topics",
+        "tags": ["Contacts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ContactId" },
+          { "$ref": "#/components/parameters/CursorLimit" },
+          { "$ref": "#/components/parameters/After" },
+          { "$ref": "#/components/parameters/Before" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact topics retrieved successfully. This endpoint returns the topic-list object directly rather than the standard success envelope.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactTopicList" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "operationId": "updateContactTopics",
+        "summary": "Update contact topic subscriptions",
+        "tags": ["Contacts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ContactId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactTopicUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact topic subscriptions updated. This endpoint returns the mutation object directly rather than the standard success envelope.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactTopicUpdateResponse" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/contacts/{contact_id}/segments": {
+      "get": {
+        "operationId": "listContactSegments",
+        "summary": "List contact segments",
+        "tags": ["Contacts"],
+        "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
+        "responses": {
+          "200": {
+            "description": "Contact segment memberships retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentMembershipListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/contacts/{contact_id}/segments/{segment_id}": {
+      "post": {
+        "operationId": "addContactToSegment",
+        "summary": "Add a contact to a segment",
+        "tags": ["Contacts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ContactId" },
+          { "$ref": "#/components/parameters/SegmentId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "The contact was already a member of the segment.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentMembershipEnvelope" } } }
+          },
+          "201": {
+            "description": "Contact added to the segment.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentMembershipEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "removeContactFromSegment",
+        "summary": "Remove a contact from a segment",
+        "tags": ["Contacts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ContactId" },
+          { "$ref": "#/components/parameters/SegmentId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "204": { "description": "Contact removed from the segment." },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/topics": {
+      "get": {
+        "operationId": "listTopics",
+        "summary": "List topics",
+        "tags": ["Topics"],
+        "parameters": [
+          { "$ref": "#/components/parameters/CursorLimit" },
+          { "$ref": "#/components/parameters/After" },
+          { "$ref": "#/components/parameters/Before" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Topics retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TopicListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createTopic",
+        "summary": "Create a topic",
+        "tags": ["Topics"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TopicCreateRequest" },
+              "example": { "name": "Product updates", "default_subscription": "opt_in", "visibility": "private" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Topic created successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/topics/{topic_id}": {
+      "get": {
+        "operationId": "getTopic",
+        "summary": "Retrieve a topic",
+        "tags": ["Topics"],
+        "parameters": [{ "$ref": "#/components/parameters/TopicId" }],
+        "responses": {
+          "200": {
+            "description": "Topic retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TopicEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "operationId": "updateTopic",
+        "summary": "Update a topic",
+        "tags": ["Topics"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TopicId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TopicUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Topic updated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTopic",
+        "summary": "Delete a topic",
+        "tags": ["Topics"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TopicId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Topic deleted successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeleteEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/segments": {
+      "get": {
+        "operationId": "listSegments",
+        "summary": "List segments",
+        "tags": ["Segments"],
+        "parameters": [
+          { "$ref": "#/components/parameters/LimitOffset" },
+          { "$ref": "#/components/parameters/Offset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Segments retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createSegment",
+        "summary": "Create a segment",
+        "tags": ["Segments"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentCreateRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Segment created successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/segments/{segment_id}": {
+      "get": {
+        "operationId": "getSegment",
+        "summary": "Retrieve a segment",
+        "tags": ["Segments"],
+        "parameters": [{ "$ref": "#/components/parameters/SegmentId" }],
+        "responses": {
+          "200": {
+            "description": "Segment retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSegment",
+        "summary": "Delete a segment",
+        "tags": ["Segments"],
+        "parameters": [
+          { "$ref": "#/components/parameters/SegmentId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Segment deleted successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/segments/{segment_id}/contacts": {
+      "get": {
+        "operationId": "listSegmentContacts",
+        "summary": "List segment contacts",
+        "tags": ["Segments"],
+        "parameters": [
+          { "$ref": "#/components/parameters/SegmentId" },
+          { "$ref": "#/components/parameters/LimitOffset" },
+          { "$ref": "#/components/parameters/Offset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Segment contacts retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentContactListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/suppressions": {
+      "get": {
+        "operationId": "listSuppressions",
+        "summary": "List suppressions",
+        "tags": ["Suppressions"],
+        "parameters": [
+          { "$ref": "#/components/parameters/CursorLimit" },
+          { "$ref": "#/components/parameters/After" },
+          { "$ref": "#/components/parameters/Before" },
+          {
+            "name": "origin",
+            "in": "query",
+            "required": false,
+            "description": "Filter by suppression origin.",
+            "schema": { "type": "string", "enum": ["bounce", "complaint", "manual"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suppressions retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuppressionListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createSuppression",
+        "summary": "Create a suppression",
+        "tags": ["Suppressions"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuppressionCreateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Suppression created successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/suppressions/batch/add": {
+      "post": {
+        "operationId": "batchAddSuppressions",
+        "summary": "Add suppressions in batch",
+        "tags": ["Suppressions"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuppressionBatchAddRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Suppressions added successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuppressionBatchAddEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/suppressions/batch/remove": {
+      "post": {
+        "operationId": "batchRemoveSuppressions",
+        "summary": "Remove suppressions in batch",
+        "description": "Provide either `emails` or `ids`, but not both. Each batch supports up to 100 suppressions.",
+        "tags": ["Suppressions"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuppressionBatchRemoveRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Suppressions removed successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuppressionBatchRemoveEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/suppressions/{suppression}": {
+      "get": {
+        "operationId": "getSuppression",
+        "summary": "Retrieve a suppression",
+        "description": "The identifier may be a suppression UUID or an email address.",
+        "tags": ["Suppressions"],
+        "parameters": [{ "$ref": "#/components/parameters/SuppressionIdentifier" }],
+        "responses": {
+          "200": {
+            "description": "Suppression retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SuppressionEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSuppression",
+        "summary": "Delete a suppression",
+        "description": "The identifier may be a suppression UUID or an email address.",
+        "tags": ["Suppressions"],
+        "parameters": [
+          { "$ref": "#/components/parameters/SuppressionIdentifier" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suppression deleted successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeleteEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/broadcasts": {
+      "get": {
+        "operationId": "listBroadcasts",
+        "summary": "List broadcasts",
+        "tags": ["Broadcasts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/LimitOffset" },
+          { "$ref": "#/components/parameters/Offset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Broadcasts retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createBroadcast",
+        "summary": "Create a broadcast",
+        "tags": ["Broadcasts"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BroadcastCreateRequest" },
+              "example": {
+                "name": "August product update",
+                "segment_id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
+                "template": "product-update"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Broadcast created successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/broadcasts/{broadcast}": {
+      "get": {
+        "operationId": "getBroadcast",
+        "summary": "Retrieve a broadcast",
+        "tags": ["Broadcasts"],
+        "parameters": [{ "$ref": "#/components/parameters/BroadcastId" }],
+        "responses": {
+          "200": {
+            "description": "Broadcast retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "operationId": "updateBroadcast",
+        "summary": "Update a broadcast",
+        "description": "Only draft broadcasts can be updated. Supply the current revision for optimistic concurrency control.",
+        "tags": ["Broadcasts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/BroadcastId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Broadcast updated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteBroadcast",
+        "summary": "Delete a broadcast",
+        "description": "Only draft or canceled broadcasts can be deleted.",
+        "tags": ["Broadcasts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/BroadcastId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Broadcast deleted successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/broadcasts/{broadcast}/send": {
+      "post": {
+        "operationId": "sendBroadcast",
+        "summary": "Send or schedule a broadcast",
+        "description": "Queues a draft broadcast immediately, or schedules it when `scheduled_at` is supplied.",
+        "tags": ["Broadcasts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/BroadcastId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastSendRequest" } } }
+        },
+        "responses": {
+          "202": {
+            "description": "Broadcast accepted for sending or scheduling.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/broadcasts/{broadcast}/cancel": {
+      "post": {
+        "operationId": "cancelBroadcast",
+        "summary": "Cancel a broadcast",
+        "description": "Cancels a scheduled broadcast.",
+        "tags": ["Broadcasts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/BroadcastId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Broadcast canceled successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/broadcasts/{broadcast}/duplicate": {
+      "post": {
+        "operationId": "duplicateBroadcast",
+        "summary": "Duplicate a broadcast",
+        "tags": ["Broadcasts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/BroadcastId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastDuplicateRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Broadcast duplicated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/broadcasts/{broadcast}/preview": {
+      "post": {
+        "operationId": "previewBroadcast",
+        "summary": "Preview a broadcast",
+        "tags": ["Broadcasts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/BroadcastId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastPreviewRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Broadcast preview rendered successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastPreviewEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/broadcasts/{broadcast}/recipients": {
+      "get": {
+        "operationId": "listBroadcastRecipients",
+        "summary": "List broadcast recipients",
+        "tags": ["Broadcasts"],
+        "parameters": [
+          { "$ref": "#/components/parameters/BroadcastId" },
+          { "$ref": "#/components/parameters/LimitOffset" },
+          { "$ref": "#/components/parameters/Offset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Broadcast recipients retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastRecipientListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/broadcasts/{broadcast}/exclusions": {
+      "get": {
+        "operationId": "getBroadcastExclusions",
+        "summary": "Get broadcast exclusions",
+        "tags": ["Broadcasts"],
+        "parameters": [{ "$ref": "#/components/parameters/BroadcastId" }],
+        "responses": {
+          "200": {
+            "description": "Broadcast exclusion summary retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastExclusionEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/broadcasts/{broadcast}/analytics": {
+      "get": {
+        "operationId": "getBroadcastAnalytics",
+        "summary": "Get broadcast analytics",
+        "tags": ["Broadcasts"],
+        "parameters": [{ "$ref": "#/components/parameters/BroadcastId" }],
+        "responses": {
+          "200": {
+            "description": "Broadcast analytics retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastAnalyticsEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/wallet": {
+      "get": {
+        "operationId": "getWallet",
+        "summary": "Retrieve the wallet",
+        "tags": ["Wallet"],
+        "responses": {
+          "200": {
+            "description": "Wallet retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WalletEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/wallet/ledger": {
+      "get": {
+        "operationId": "listWalletLedger",
+        "summary": "List wallet ledger entries",
+        "tags": ["Wallet"],
+        "parameters": [
+          { "$ref": "#/components/parameters/LimitOffset" },
+          { "$ref": "#/components/parameters/Offset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wallet ledger retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WalletLedgerEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
         }
       }
     }
@@ -669,585 +1283,297 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "Team token",
-        "description": "Pass a Dugble team token in the `Authorization` header as `Bearer <token>`."
+        "description": "Pass a Dugble team token in the Authorization header as Bearer <token>. Team token secrets use the dgb_team_ prefix."
       }
     },
     "parameters": {
-      "MessageId": {
-        "name": "message_id",
+      "MessageId": { "name": "message_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "DomainId": { "name": "domain_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "SenderId": { "name": "sender_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "ContactId": { "name": "contact_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "TopicId": { "name": "topic_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "SegmentId": { "name": "segment_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "BroadcastId": { "name": "broadcast", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "SuppressionIdentifier": {
+        "name": "suppression",
         "in": "path",
         "required": true,
-        "description": "Dugble message ID.",
-        "schema": {
-          "type": "string",
-          "format": "uuid"
-        }
+        "description": "Suppression UUID or email address.",
+        "schema": { "type": "string" }
       },
-      "Limit": {
+      "LimitOffset": {
         "name": "limit",
         "in": "query",
         "required": false,
-        "description": "Maximum number of messages to return. Values outside 1\u2013100 use the default of 50.",
-        "schema": {
-          "type": "integer",
-          "format": "int32",
-          "minimum": 1,
-          "maximum": 100,
-          "default": 50
-        }
+        "description": "Maximum number of records to return. Most offset-paginated endpoints default to 50 and cap at 100.",
+        "schema": { "type": "integer", "format": "int32", "minimum": 1, "maximum": 100 }
       },
       "Offset": {
         "name": "offset",
         "in": "query",
         "required": false,
-        "description": "Number of messages to skip.",
-        "schema": {
-          "type": "integer",
-          "format": "int32",
-          "minimum": 0,
-          "default": 0
-        }
+        "description": "Number of records to skip.",
+        "schema": { "type": "integer", "format": "int32", "minimum": 0 }
+      },
+      "CursorLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of records to return. Defaults to 20 and must be between 1 and 100.",
+        "schema": { "type": "integer", "format": "int32", "minimum": 1, "maximum": 100, "default": 20 }
+      },
+      "After": {
+        "name": "after",
+        "in": "query",
+        "required": false,
+        "description": "Return records after this UUID cursor. Cannot be combined with before.",
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "Before": {
+        "name": "before",
+        "in": "query",
+        "required": false,
+        "description": "Return records before this UUID cursor. Cannot be combined with after.",
+        "schema": { "type": "string", "format": "uuid" }
       },
       "IdempotencyKey": {
         "name": "Idempotency-Key",
         "in": "header",
         "required": false,
-        "description": "A unique key that prevents duplicate mutation requests. Maximum 256 characters.",
-        "schema": {
-          "type": "string",
-          "maxLength": 256
-        },
-        "example": "order_123_welcome_email"
+        "description": "Optional idempotency key for mutation requests. Maximum 256 characters.",
+        "schema": { "type": "string", "maxLength": 256 }
+      },
+      "RequiredIdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "description": "Required unique key for email and SMS send requests. Maximum 256 characters.",
+        "schema": { "type": "string", "maxLength": 256 }
       }
     },
     "responses": {
       "Error": {
-        "description": "The request failed. The HTTP status reflects the error category.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorEnvelope"
-            },
-            "examples": {
-              "badRequest": {
-                "summary": "Invalid request",
-                "value": {
-                  "success": false,
-                  "error": {
-                    "code": "BAD_REQUEST",
-                    "message": "Invalid request"
-                  }
-                }
-              },
-              "unauthorized": {
-                "summary": "Invalid or missing team token",
-                "value": {
-                  "success": false,
-                  "error": {
-                    "code": "UNAUTHORIZED",
-                    "message": "Authentication is required"
-                  }
-                }
-              }
-            }
-          }
-        }
+        "description": "The request failed. See the HTTP status and structured error code for the category.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorEnvelope" } } }
       }
     },
     "schemas": {
+      "ErrorEnvelope": {
+        "type": "object",
+        "required": ["success", "error"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [false] },
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": ["BAD_REQUEST", "UNAUTHORIZED", "FORBIDDEN", "STEP_UP_REQUIRED", "NOT_FOUND", "CONFLICT", "PAYMENT_REQUIRED", "PAYLOAD_TOO_LARGE", "UNPROCESSABLE_ENTITY", "TOO_MANY_REQUESTS", "INTERNAL_ERROR", "SERVICE_UNAVAILABLE"]
+              },
+              "message": { "type": "string" }
+            }
+          }
+        }
+      },
+      "MutationResponse": {
+        "type": "object",
+        "required": ["object", "id"],
+        "properties": {
+          "object": { "type": "string" },
+          "id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "MutationEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/MutationResponse" }
+        }
+      },
+      "MutationListEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/MutationResponse" } }
+        }
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "required": ["object", "id", "deleted"],
+        "properties": {
+          "object": { "type": "string" },
+          "id": { "type": "string", "format": "uuid" },
+          "deleted": { "type": "boolean" }
+        }
+      },
+      "DeleteEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/DeleteResponse" }
+        }
+      },
       "EmailAddressObject": {
         "type": "object",
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "ada@example.com"
-          },
-          "name": {
-            "type": "string",
-            "maxLength": 128,
-            "example": "Ada Lovelace"
-          }
+          "email": { "type": "string", "format": "email" },
+          "name": { "type": "string", "maxLength": 128 }
         },
         "additionalProperties": false
       },
       "EmailAddress": {
-        "description": "An email address string, optionally with a friendly name, or a structured address object.",
         "oneOf": [
-          {
-            "type": "string",
-            "example": "Ada Lovelace <ada@example.com>"
-          },
-          {
-            "$ref": "#/components/schemas/EmailAddressObject"
-          }
+          { "type": "string", "example": "Ada Lovelace <ada@example.com>" },
+          { "$ref": "#/components/schemas/EmailAddressObject" }
         ]
       },
       "EmailAddressOrList": {
         "oneOf": [
-          {
-            "$ref": "#/components/schemas/EmailAddress"
-          },
-          {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EmailAddress"
-            }
-          }
+          { "$ref": "#/components/schemas/EmailAddress" },
+          { "type": "array", "items": { "$ref": "#/components/schemas/EmailAddress" } }
         ]
       },
       "Tag": {
         "type": "object",
-        "required": [
-          "name",
-          "value"
-        ],
+        "required": ["name", "value"],
         "properties": {
-          "name": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9_-]+$",
-            "maxLength": 256,
-            "example": "category"
-          },
-          "value": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9_-]+$",
-            "maxLength": 256,
-            "example": "welcome"
-          }
-        },
-        "additionalProperties": false
+          "name": { "type": "string", "maxLength": 256 },
+          "value": { "type": "string", "maxLength": 256 }
+        }
       },
       "Attachment": {
         "type": "object",
-        "required": [
-          "filename"
-        ],
-        "description": "An attachment must provide exactly one of `content` or `path`. Total decoded Base64 content may not exceed 40 MB.",
+        "required": ["filename"],
         "properties": {
-          "content": {
-            "type": "string",
-            "contentEncoding": "base64",
-            "description": "Base64-encoded attachment content."
-          },
-          "filename": {
-            "type": "string",
-            "minLength": 1,
-            "example": "invoice.pdf"
-          },
-          "path": {
-            "type": "string",
-            "format": "uri",
-            "pattern": "^https?://",
-            "example": "https://example.com/invoice.pdf"
-          },
-          "content_type": {
-            "type": "string",
-            "example": "application/pdf"
-          },
-          "content_id": {
-            "type": "string",
-            "example": "company-logo"
-          }
-        },
-        "oneOf": [
-          {
-            "required": [
-              "content"
-            ],
-            "properties": {
-              "content": {
-                "type": "string"
-              },
-              "path": false
-            }
-          },
-          {
-            "required": [
-              "path"
-            ],
-            "properties": {
-              "path": {
-                "type": "string"
-              },
-              "content": false
-            }
-          }
-        ],
-        "additionalProperties": false
+          "content": { "type": "string", "contentEncoding": "base64" },
+          "filename": { "type": "string" },
+          "path": { "type": "string", "format": "uri" },
+          "content_type": { "type": "string" },
+          "content_id": { "type": "string" }
+        }
       },
       "EmailSendRequest": {
         "type": "object",
-        "required": [
-          "to",
-          "subject"
-        ],
+        "required": ["to", "subject"],
         "properties": {
-          "from": {
-            "$ref": "#/components/schemas/EmailAddress"
-          },
-          "to": {
-            "$ref": "#/components/schemas/EmailAddressOrList"
-          },
-          "cc": {
-            "$ref": "#/components/schemas/EmailAddressOrList"
-          },
-          "bcc": {
-            "$ref": "#/components/schemas/EmailAddressOrList"
-          },
-          "reply_to": {
-            "$ref": "#/components/schemas/EmailAddressOrList"
-          },
-          "subject": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
-          },
-          "html": {
-            "type": "string",
-            "maxLength": 1048576,
-            "description": "HTML body. At least one of `html` or `text` is required."
-          },
-          "text": {
-            "type": "string",
-            "maxLength": 1048576,
-            "description": "Plain-text body. At least one of `html` or `text` is required."
-          },
-          "headers": {
-            "type": "object",
-            "maxProperties": 100,
-            "additionalProperties": {
-              "type": "string"
-            },
-            "example": {
-              "X-Entity-Ref-ID": "order-123"
-            }
-          },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Attachment"
-            }
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Tag"
-            }
-          },
-          "scheduled_at": {
-            "type": "string",
-            "description": "Future ISO 8601 date-time or relative value such as `in 5 min`.",
-            "examples": [
-              "2026-08-05T11:52:01.858Z",
-              "in 5 min"
-            ]
-          },
-          "metadata": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Custom JSON metadata, up to 16 KB."
-          }
+          "from": { "$ref": "#/components/schemas/EmailAddress" },
+          "to": { "$ref": "#/components/schemas/EmailAddressOrList" },
+          "cc": { "$ref": "#/components/schemas/EmailAddressOrList" },
+          "bcc": { "$ref": "#/components/schemas/EmailAddressOrList" },
+          "reply_to": { "$ref": "#/components/schemas/EmailAddressOrList" },
+          "subject": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "html": { "type": "string", "maxLength": 1048576 },
+          "text": { "type": "string", "maxLength": 1048576 },
+          "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+          "attachments": { "type": "array", "items": { "$ref": "#/components/schemas/Attachment" } },
+          "tags": { "type": "array", "items": { "$ref": "#/components/schemas/Tag" } },
+          "scheduled_at": { "type": "string", "description": "Future ISO 8601 date-time or supported relative schedule value." },
+          "metadata": { "type": "object", "additionalProperties": true }
         },
-        "anyOf": [
-          {
-            "required": [
-              "html"
-            ]
-          },
-          {
-            "required": [
-              "text"
-            ]
-          }
-        ],
+        "anyOf": [{ "required": ["html"] }, { "required": ["text"] }],
         "additionalProperties": false
       },
       "EmailBatchArray": {
         "type": "array",
         "minItems": 1,
         "maxItems": 100,
-        "items": {
-          "$ref": "#/components/schemas/EmailBatchItem"
-        }
+        "items": { "$ref": "#/components/schemas/EmailSendRequest" }
       },
       "EmailBatchObject": {
         "type": "object",
-        "required": [
-          "messages"
-        ],
-        "properties": {
-          "messages": {
-            "$ref": "#/components/schemas/EmailBatchArray"
-          }
-        },
-        "additionalProperties": false
-      },
-      "EmailBatchItem": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/EmailSendRequest"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "attachments": false
-            }
-          }
-        ]
-      },
-      "EmailSendResult": {
-        "type": "object",
-        "required": [
-          "id"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "additionalProperties": false
-      },
-      "EmailSummary": {
-        "type": "object",
-        "required": [
-          "id",
-          "to_email",
-          "subject",
-          "status",
-          "queued_at",
-          "created_at"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "to_email": {
-            "type": "string",
-            "format": "email"
-          },
-          "to_name": {
-            "type": "string"
-          },
-          "subject": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/EmailStatus"
-          },
-          "provider": {
-            "type": "string"
-          },
-          "queued_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "submitted_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "delivered_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Email": {
-        "type": "object",
-        "required": [
-          "object",
-          "id",
-          "to",
-          "from",
-          "created_at",
-          "subject",
-          "bcc",
-          "cc",
-          "reply_to",
-          "last_event",
-          "tags"
-        ],
-        "properties": {
-          "object": {
-            "type": "string",
-            "const": "email"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "message_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Provider message ID, when available."
-          },
-          "to": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "from": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "subject": {
-            "type": "string"
-          },
-          "html": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "text": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "bcc": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "cc": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "reply_to": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "last_event": {
-            "$ref": "#/components/schemas/EmailStatus"
-          },
-          "scheduled_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Tag"
-            }
-          }
-        }
-      },
-      "EmailStatus": {
-        "type": "string",
-        "enum": [
-          "queued",
-          "processing",
-          "submitted",
-          "delivered",
-          "delayed",
-          "bounced",
-          "complained",
-          "rejected",
-          "failed",
-          "canceled"
-        ]
+        "required": ["messages"],
+        "properties": { "messages": { "$ref": "#/components/schemas/EmailBatchArray" } }
       },
       "ScheduleUpdateRequest": {
         "type": "object",
-        "required": [
-          "scheduled_at"
-        ],
-        "properties": {
-          "scheduled_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Future ISO 8601 delivery time."
-          }
-        },
-        "additionalProperties": false
+        "required": ["scheduled_at"],
+        "properties": { "scheduled_at": { "type": "string" } }
       },
-      "MutationResult": {
+      "EmailResource": {
         "type": "object",
-        "required": [
-          "object",
-          "id"
-        ],
+        "required": ["object", "id", "to", "from", "created_at", "subject", "last_event"],
         "properties": {
-          "object": {
-            "type": "string",
-            "enum": [
-              "email",
-              "sms"
-            ]
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "additionalProperties": false
+          "object": { "type": "string", "enum": ["email"] },
+          "id": { "type": "string", "format": "uuid" },
+          "message_id": { "type": "string" },
+          "to": { "type": "array", "items": { "type": "string" } },
+          "from": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "subject": { "type": "string" },
+          "html": { "type": "string" },
+          "text": { "type": "string" },
+          "bcc": { "type": "array", "items": { "type": "string" } },
+          "cc": { "type": "array", "items": { "type": "string" } },
+          "reply_to": { "type": "array", "items": { "type": "string" } },
+          "last_event": { "type": "string", "enum": ["queued", "processing", "submitted", "delivered", "delayed", "bounced", "complained", "rejected", "failed", "canceled"] },
+          "scheduled_at": { "type": "string", "format": "date-time" },
+          "tags": { "type": "array", "items": { "$ref": "#/components/schemas/Tag" } }
+        }
+      },
+      "EmailSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "to_email": { "type": "string", "format": "email" },
+          "to_name": { "type": "string" },
+          "subject": { "type": "string" },
+          "status": { "type": "string" },
+          "provider": { "type": "string" },
+          "queued_at": { "type": "string", "format": "date-time" },
+          "submitted_at": { "type": "string", "format": "date-time" },
+          "delivered_at": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EmailEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/EmailResource" } }
+      },
+      "EmailListEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/EmailSummary" } } }
+      },
+      "DeliveryEvent": {
+        "type": "object",
+        "required": ["id", "type", "occurred_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string" },
+          "occurred_at": { "type": "string", "format": "date-time" },
+          "provider": { "type": "string" },
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      },
+      "EventList": {
+        "type": "object",
+        "required": ["object", "data"],
+        "properties": {
+          "object": { "type": "string" },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeliveryEvent" } }
+        }
+      },
+      "EventListEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/EventList" } }
       },
       "SmsSendRequest": {
         "type": "object",
-        "required": [
-          "to",
-          "from",
-          "body"
-        ],
+        "required": ["to", "from", "body"],
         "properties": {
-          "to": {
-            "type": "string",
-            "pattern": "^\\+[1-9][0-9]{7,14}$",
-            "example": "+233201234567"
-          },
-          "from": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 11,
-            "example": "Dugble"
-          },
-          "body": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1600
-          },
-          "metadata": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Tag"
-            }
-          },
-          "scheduled_at": {
-            "type": "string",
-            "description": "ISO 8601 time at least 30 seconds in the future, or a relative value such as `in 5 min`.",
-            "examples": [
-              "2026-08-05T11:52:01.858Z",
-              "in 5 min"
-            ]
-          }
+          "to": { "type": "string", "example": "+233201234567" },
+          "from": { "type": "string", "example": "Dugble" },
+          "body": { "type": "string" },
+          "metadata": { "type": "object", "additionalProperties": true },
+          "scheduled_at": { "type": "string" }
         },
         "additionalProperties": false
       },
@@ -1255,409 +1581,504 @@
         "type": "array",
         "minItems": 1,
         "maxItems": 100,
-        "items": {
-          "$ref": "#/components/schemas/SmsSendRequest"
-        }
+        "items": { "$ref": "#/components/schemas/SmsSendRequest" }
       },
       "SmsBatchObject": {
         "type": "object",
-        "required": [
-          "messages"
-        ],
-        "properties": {
-          "messages": {
-            "$ref": "#/components/schemas/SmsBatchArray"
-          }
-        },
-        "additionalProperties": false
-      },
-      "SmsSendResult": {
-        "type": "object",
-        "required": [
-          "object",
-          "id"
-        ],
-        "properties": {
-          "object": {
-            "type": "string",
-            "const": "sms"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "additionalProperties": false
-      },
-      "Destination": {
-        "type": "object",
-        "required": [
-          "country"
-        ],
-        "properties": {
-          "country": {
-            "type": "string",
-            "description": "Resolved ISO 3166-1 alpha-2 destination country code.",
-            "example": "GH"
-          }
-        },
-        "additionalProperties": false
+        "required": ["messages"],
+        "properties": { "messages": { "$ref": "#/components/schemas/SmsBatchArray" } }
       },
       "SmsFailure": {
         "type": "object",
-        "required": [
-          "code",
-          "message"
-        ],
-        "properties": {
-          "code": {
-            "type": "string",
-            "example": "SMS_FAILED"
-          },
-          "message": {
-            "type": "string",
-            "example": "SMS delivery failed"
-          }
-        },
-        "additionalProperties": false
+        "required": ["code", "message"],
+        "properties": { "code": { "type": "string" }, "message": { "type": "string" } }
       },
-      "SmsMessage": {
+      "SmsResource": {
         "type": "object",
-        "required": [
-          "object",
-          "id",
-          "to",
-          "from",
-          "body",
-          "last_event",
-          "destination",
-          "segments",
-          "metadata",
-          "tags",
-          "scheduled_at",
-          "created_at",
-          "updated_at"
-        ],
+        "required": ["object", "id", "to", "from", "body", "last_event", "destination", "segments", "created_at", "updated_at"],
         "properties": {
-          "object": {
-            "type": "string",
-            "const": "sms"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "message_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Provider message ID, when available."
-          },
-          "to": {
-            "type": "string",
-            "example": "+233201234567"
-          },
-          "from": {
-            "type": "string",
-            "example": "Dugble"
-          },
-          "body": {
-            "type": "string"
-          },
-          "last_event": {
-            "$ref": "#/components/schemas/SmsStatus"
-          },
-          "destination": {
-            "$ref": "#/components/schemas/Destination"
-          },
-          "segments": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 1
-          },
-          "metadata": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Tag"
-            }
-          },
-          "scheduled_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "failure": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/SmsFailure"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "submitted_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "delivered_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "object": { "type": "string", "enum": ["sms"] },
+          "id": { "type": "string", "format": "uuid" },
+          "message_id": { "type": "string" },
+          "to": { "type": "string" },
+          "from": { "type": "string" },
+          "body": { "type": "string" },
+          "last_event": { "type": "string", "enum": ["queued", "processing", "submitted", "sent", "delivered", "undelivered", "rejected", "failed", "expired", "unknown", "canceled"] },
+          "destination": { "type": "object", "properties": { "country": { "type": "string" } } },
+          "segments": { "type": "integer", "format": "int32" },
+          "metadata": { "type": "object", "additionalProperties": true },
+          "scheduled_at": { "type": "string", "format": "date-time" },
+          "failure": { "$ref": "#/components/schemas/SmsFailure" },
+          "submitted_at": { "type": "string", "format": "date-time" },
+          "delivered_at": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
-      },
-      "SmsStatus": {
-        "type": "string",
-        "enum": [
-          "queued",
-          "processing",
-          "submitted",
-          "sent",
-          "delivered",
-          "undelivered",
-          "rejected",
-          "failed",
-          "expired",
-          "unknown",
-          "canceled"
-        ]
-      },
-      "ErrorObject": {
-        "type": "object",
-        "required": [
-          "code",
-          "message"
-        ],
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
-      "ErrorEnvelope": {
-        "type": "object",
-        "required": [
-          "success",
-          "error"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": false
-          },
-          "error": {
-            "$ref": "#/components/schemas/ErrorObject"
-          }
-        },
-        "additionalProperties": false
-      },
-      "EmailAcceptedEnvelope": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/EmailSummary"
-          }
-        },
-        "additionalProperties": false
-      },
-      "EmailBatchAcceptedEnvelope": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EmailSendResult"
-            }
-          }
-        },
-        "additionalProperties": false
-      },
-      "EmailEnvelope": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/Email"
-          }
-        },
-        "additionalProperties": false
-      },
-      "EmailListEnvelope": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EmailSummary"
-            }
-          }
-        },
-        "additionalProperties": false
-      },
-      "EmailMutationEnvelope": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/MutationResult"
-          }
-        },
-        "additionalProperties": false
-      },
-      "SmsAcceptedEnvelope": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/SmsSendResult"
-          }
-        },
-        "additionalProperties": false
-      },
-      "SmsBatchAcceptedEnvelope": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SmsSendResult"
-            }
-          }
-        },
-        "additionalProperties": false
       },
       "SmsEnvelope": {
         "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/SmsMessage"
-          }
-        },
-        "additionalProperties": false
+        "required": ["success", "data"],
+        "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SmsResource" } }
       },
       "SmsListEnvelope": {
         "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SmsMessage"
-            }
-          }
-        },
-        "additionalProperties": false
+        "required": ["success", "data"],
+        "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SmsResource" } } }
       },
-      "SmsMutationEnvelope": {
+      "VerificationRecord": {
         "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
+        "required": ["record", "name", "value", "type", "status", "ttl"],
         "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/MutationResult"
+          "record": { "type": "string", "enum": ["DKIM", "SPF"] },
+          "name": { "type": "string" },
+          "value": { "type": "string" },
+          "type": { "type": "string", "enum": ["TXT", "MX"] },
+          "status": { "type": "string", "enum": ["pending", "verified", "failed"] },
+          "ttl": { "type": "string" },
+          "priority": { "type": "integer" }
+        }
+      },
+      "DomainCapabilities": {
+        "type": "object",
+        "required": ["sending", "receiving"],
+        "properties": { "sending": { "type": "boolean", "default": true }, "receiving": { "type": "boolean", "default": false, "description": "Receiving is not currently supported." } }
+      },
+      "DomainCreateRequest": {
+        "type": "object",
+        "required": ["name", "region"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 253 },
+          "domain": { "type": "string", "description": "Legacy alias for name when name is omitted." },
+          "region": { "type": "string" },
+          "custom_return_path": { "type": "string", "default": "send" },
+          "open_tracking": { "type": "boolean", "default": true },
+          "click_tracking": { "type": "boolean", "default": false },
+          "tracking_subdomain": { "type": "string" },
+          "tls": { "type": "string", "enum": ["opportunistic", "enforced"], "default": "opportunistic" },
+          "capabilities": { "$ref": "#/components/schemas/DomainCapabilities" }
+        }
+      },
+      "SenderDomain": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "provider": { "type": "string" },
+          "provider_account": { "type": "string" },
+          "region": { "type": "string" },
+          "provider_external_id": { "type": "string" },
+          "status": { "type": "string", "enum": ["not_started", "pending", "verified", "partially_verified", "partially_failed", "failed", "temporary_failure", "disabled"] },
+          "provider_status": { "type": "string" },
+          "records": { "type": "array", "items": { "$ref": "#/components/schemas/VerificationRecord" } },
+          "open_tracking": { "type": "boolean" },
+          "click_tracking": { "type": "boolean" },
+          "tracking_subdomain": { "type": "string" },
+          "active_tracking_subdomain": { "type": "string" },
+          "tls": { "type": "string", "enum": ["opportunistic", "enforced"] },
+          "capabilities": { "$ref": "#/components/schemas/DomainCapabilities" },
+          "custom_return_path": { "type": "string" },
+          "failure_reason": { "type": "string" },
+          "health_status": { "type": "string", "enum": ["unknown", "healthy", "degraded"] },
+          "consecutive_health_failures": { "type": "integer", "format": "int32" },
+          "last_checked_at": { "type": "string", "format": "date-time" },
+          "last_health_checked_at": { "type": "string", "format": "date-time" },
+          "last_health_failure_at": { "type": "string", "format": "date-time" },
+          "verified_at": { "type": "string", "format": "date-time" },
+          "disabled_at": { "type": "string", "format": "date-time" },
+          "created_by": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DomainEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SenderDomain" } } },
+      "DomainListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SenderDomain" } } } },
+      "ProvisioningResponse": {
+        "type": "object",
+        "required": ["status", "message", "retry_after_seconds"],
+        "properties": { "status": { "type": "string", "enum": ["provisioning"] }, "message": { "type": "string" }, "retry_after_seconds": { "type": "integer" } }
+      },
+      "ProvisioningEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/ProvisioningResponse" } } },
+      "SenderIdCreateRequest": {
+        "type": "object",
+        "required": ["name", "country_code", "purpose"],
+        "properties": {
+          "name": { "type": "string" },
+          "country_code": { "type": "string", "minLength": 2, "maxLength": 2, "description": "ISO 3166-1 alpha-2 country code." },
+          "purpose": { "type": "string", "maxLength": 500 },
+          "provider": { "type": "string", "maxLength": 120 }
+        }
+      },
+      "SenderIdResource": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "country_code": { "type": "string" },
+          "purpose": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "approved", "rejected", "suspended", "inactive"] },
+          "rejection_reason": { "type": "string" },
+          "approved_at": { "type": "string", "format": "date-time" },
+          "rejected_at": { "type": "string", "format": "date-time" },
+          "suspended_at": { "type": "string", "format": "date-time" },
+          "created_by": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SenderIdEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SenderIdResource" } } },
+      "SenderIdListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SenderIdResource" } } } },
+      "ContactCreateRequest": {
+        "type": "object",
+        "required": ["email"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string", "description": "Valid international phone number." },
+          "sms_consent_status": { "type": "string", "enum": ["unknown", "opted_in", "opted_out"], "default": "unknown" },
+          "sms_consent_source": { "type": "string", "enum": ["api", "import", "manual"], "description": "Required when an explicit SMS consent status is supplied." },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "unsubscribed": { "type": "boolean", "default": false },
+          "properties": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ContactUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" },
+          "sms_consent_status": { "type": "string", "enum": ["unknown", "opted_in", "opted_out"] },
+          "sms_consent_source": { "type": "string", "enum": ["api", "import", "manual"] },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "unsubscribed": { "type": "boolean" },
+          "properties": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ContactResource": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" },
+          "normalized_phone": { "type": "string" },
+          "phone_country": { "type": "string" },
+          "sms_consent_status": { "type": "string", "enum": ["unknown", "opted_in", "opted_out"] },
+          "sms_consent_updated_at": { "type": "string", "format": "date-time" },
+          "sms_consent_source": { "type": "string" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "unsubscribed": { "type": "boolean" },
+          "properties": { "type": "object", "additionalProperties": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ContactEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/ContactResource" } } },
+      "ContactListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/ContactResource" } } } },
+      "ContactTopic": {
+        "type": "object",
+        "required": ["id", "name", "subscription"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "subscription": { "type": "string", "enum": ["opt_in", "opt_out"] }
+        }
+      },
+      "ContactTopicList": {
+        "type": "object",
+        "required": ["object", "has_more", "data"],
+        "properties": {
+          "object": { "type": "string", "enum": ["list"] },
+          "has_more": { "type": "boolean" },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ContactTopic" } }
+        }
+      },
+      "ContactTopicUpdateRequest": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id", "subscription"],
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "subscription": { "type": "string", "enum": ["opt_in", "opt_out"] }
           }
-        },
-        "additionalProperties": false
-      }
+        }
+      },
+      "ContactTopicUpdateResponse": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } },
+      "SegmentMembership": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "assigned_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SegmentMembershipEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SegmentMembership" } } },
+      "SegmentMembershipListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SegmentMembership" } } } },
+      "TopicCreateRequest": {
+        "type": "object",
+        "required": ["name", "default_subscription"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 50 },
+          "description": { "type": "string", "maxLength": 200 },
+          "default_subscription": { "type": "string", "enum": ["opt_in", "opt_out"] },
+          "visibility": { "type": "string", "enum": ["public", "private"], "default": "private" }
+        }
+      },
+      "TopicUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "maxLength": 50 },
+          "description": { "type": "string", "maxLength": 200 },
+          "visibility": { "type": "string", "enum": ["public", "private"] }
+        }
+      },
+      "TopicResource": {
+        "type": "object",
+        "required": ["object", "id", "name", "default_subscription", "visibility", "created_at"],
+        "properties": {
+          "object": { "type": "string", "enum": ["topic"] },
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "default_subscription": { "type": "string", "enum": ["opt_in", "opt_out"] },
+          "visibility": { "type": "string", "enum": ["public", "private"] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TopicList": {
+        "type": "object",
+        "required": ["object", "has_more", "data"],
+        "properties": {
+          "object": { "type": "string", "enum": ["list"] },
+          "has_more": { "type": "boolean" },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/TopicResource" } }
+        }
+      },
+      "TopicEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/TopicResource" } } },
+      "TopicListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/TopicList" } } },
+      "SegmentCreateRequest": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string", "minLength": 1 } } },
+      "SegmentResource": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SegmentContact": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "unsubscribed": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SegmentEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SegmentResource" } } },
+      "SegmentListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SegmentResource" } } } },
+      "SegmentContactListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SegmentContact" } } } },
+      "SuppressionCreateRequest": { "type": "object", "required": ["email"], "properties": { "email": { "type": "string", "format": "email" } } },
+      "SuppressionBatchAddRequest": {
+        "type": "object",
+        "required": ["emails"],
+        "properties": { "emails": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "type": "string", "format": "email" } } }
+      },
+      "SuppressionBatchRemoveRequest": {
+        "type": "object",
+        "oneOf": [
+          { "required": ["emails"], "properties": { "emails": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "type": "string", "format": "email" } } } },
+          { "required": ["ids"], "properties": { "ids": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "type": "string", "format": "uuid" } } } }
+        ]
+      },
+      "SuppressionResource": {
+        "type": "object",
+        "required": ["object", "id", "email", "origin", "created_at"],
+        "properties": {
+          "object": { "type": "string", "enum": ["suppression"] },
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "origin": { "type": "string", "enum": ["bounce", "complaint", "manual"] },
+          "source_id": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SuppressionList": {
+        "type": "object",
+        "required": ["object", "has_more", "data"],
+        "properties": {
+          "object": { "type": "string", "enum": ["list"] },
+          "has_more": { "type": "boolean" },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/SuppressionResource" } }
+        }
+      },
+      "SuppressionEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SuppressionResource" } } },
+      "SuppressionListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SuppressionList" } } },
+      "SuppressionBatchAdd": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/MutationResponse" } } } },
+      "SuppressionBatchAddEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SuppressionBatchAdd" } } },
+      "SuppressionBatchRemove": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeleteResponse" } } } },
+      "SuppressionBatchRemoveEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SuppressionBatchRemove" } } },
+      "BroadcastCreateRequest": {
+        "type": "object",
+        "required": ["name", "segment_id", "template"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "segment_id": { "type": "string", "format": "uuid" },
+          "topic_id": { "type": "string", "format": "uuid" },
+          "template": { "type": "string", "description": "Template identifier accepted by the template service." },
+          "variable_bindings": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "BroadcastUpdateRequest": {
+        "type": "object",
+        "required": ["revision"],
+        "properties": {
+          "revision": { "type": "integer", "format": "int64", "minimum": 1 },
+          "name": { "type": "string" },
+          "segment_id": { "type": "string", "format": "uuid" },
+          "topic_id": { "type": "string", "format": "uuid" },
+          "template": { "type": "string" },
+          "variable_bindings": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "BroadcastSendRequest": { "type": "object", "properties": { "scheduled_at": { "type": "string", "format": "date-time", "description": "Must be in the future." } } },
+      "BroadcastDuplicateRequest": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string", "minLength": 1 } } },
+      "BroadcastPreviewRequest": { "type": "object", "properties": { "variables": { "type": "object", "additionalProperties": true } } },
+      "BroadcastResource": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "status": { "type": "string", "enum": ["draft", "scheduled", "queued", "sent", "failed", "canceled"] },
+          "segment_id": { "type": "string", "format": "uuid" },
+          "topic_id": { "type": "string", "format": "uuid" },
+          "template_id": { "type": "string", "format": "uuid" },
+          "template_version_id": { "type": "string", "format": "uuid" },
+          "variable_bindings": { "type": "object", "additionalProperties": true },
+          "scheduled_at": { "type": "string", "format": "date-time" },
+          "queued_at": { "type": "string", "format": "date-time" },
+          "sent_at": { "type": "string", "format": "date-time" },
+          "canceled_at": { "type": "string", "format": "date-time" },
+          "audience_count": { "type": "integer", "format": "int64" },
+          "eligible_count": { "type": "integer", "format": "int64" },
+          "suppressed_count": { "type": "integer", "format": "int64" },
+          "queued_count": { "type": "integer", "format": "int64" },
+          "failed_count": { "type": "integer", "format": "int64" },
+          "revision": { "type": "integer", "format": "int64" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BroadcastRecipient": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "broadcast_id": { "type": "string", "format": "uuid" },
+          "contact_id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "contact_snapshot": { "type": "object", "additionalProperties": true },
+          "status": { "type": "string" },
+          "exclusion_reason": { "type": "string" },
+          "email_message_id": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "queued_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BroadcastExclusionSummary": {
+        "type": "object",
+        "required": ["object", "broadcast_id", "total", "reasons"],
+        "properties": {
+          "object": { "type": "string" },
+          "broadcast_id": { "type": "string", "format": "uuid" },
+          "total": { "type": "integer", "format": "int64" },
+          "reasons": { "type": "object", "additionalProperties": { "type": "integer", "format": "int64" } }
+        }
+      },
+      "BroadcastAnalytics": {
+        "type": "object",
+        "properties": {
+          "object": { "type": "string" },
+          "broadcast_id": { "type": "string", "format": "uuid" },
+          "audience": { "type": "integer", "format": "int64" },
+          "eligible": { "type": "integer", "format": "int64" },
+          "excluded": { "type": "integer", "format": "int64" },
+          "queued": { "type": "integer", "format": "int64" },
+          "delivered": { "type": "integer", "format": "int64" },
+          "bounced": { "type": "integer", "format": "int64" },
+          "complained": { "type": "integer", "format": "int64" },
+          "failed": { "type": "integer", "format": "int64" },
+          "opened": { "type": "integer", "format": "int64" },
+          "clicked": { "type": "integer", "format": "int64" }
+        }
+      },
+      "BroadcastPreview": {
+        "type": "object",
+        "properties": {
+          "template_id": { "type": "string", "format": "uuid" },
+          "version_id": { "type": "string", "format": "uuid" },
+          "subject": { "type": "string" },
+          "html": { "type": "string" },
+          "text": { "type": "string" },
+          "from_email": { "type": "string", "format": "email" },
+          "from_name": { "type": "string" },
+          "reply_to": { "type": "string" }
+        }
+      },
+      "BroadcastEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastResource" } } },
+      "BroadcastListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/BroadcastResource" } } } },
+      "BroadcastRecipientListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/BroadcastRecipient" } } } },
+      "BroadcastExclusionEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastExclusionSummary" } } },
+      "BroadcastAnalyticsEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastAnalytics" } } },
+      "BroadcastPreviewEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastPreview" } } },
+      "WalletResource": {
+        "type": "object",
+        "properties": {
+          "team_id": { "type": "string", "format": "uuid" },
+          "billing_market": { "type": "string" },
+          "currency": { "type": "string" },
+          "balance_units": { "type": "integer", "format": "int64" },
+          "tier": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LedgerEntry": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "usage_authorization_id": { "type": "string", "format": "uuid" },
+          "amount_units": { "type": "integer", "format": "int64" },
+          "transaction_type": { "type": "string" },
+          "reference_id": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WalletLedgerPage": {
+        "type": "object",
+        "required": ["entries", "limit", "offset"],
+        "properties": {
+          "entries": { "type": "array", "items": { "$ref": "#/components/schemas/LedgerEntry" } },
+          "limit": { "type": "integer", "format": "int32" },
+          "offset": { "type": "integer", "format": "int32" }
+        }
+      },
+      "WalletEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/WalletResource" } } },
+      "WalletLedgerEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/WalletLedgerPage" } } }
     }
   }
 }
