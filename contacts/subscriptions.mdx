@@ -1,7 +1,58 @@
 ---
-title: Subscriptions
+title: Contact Subscriptions
+description: Read and update a contact's topic subscription preferences.
 ---
 
-# Subscriptions
+Contacts can have an `opt_in` or `opt_out` state for each topic. Use contact subscriptions for message-category preferences rather than for broad audience grouping.
 
-Placeholder: Contact subscription management.
+## List topic preferences
+
+```http
+GET /contacts/{contact_id}/topics
+```
+
+The response contains the topics visible to the contact and the contact's effective subscription state:
+
+```json
+{
+  "object": "list",
+  "has_more": false,
+  "data": [
+    {
+      "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
+      "name": "Product updates",
+      "description": "Major releases and announcements",
+      "subscription": "opt_in"
+    }
+  ]
+}
+```
+
+The endpoint uses cursor pagination. Use `after` or `before`, but not both in the same request.
+
+## Update preferences
+
+Send an array of topic updates to `PATCH /contacts/{contact_id}/topics`:
+
+```bash
+curl --request PATCH \
+  --url https://api.dugble.com/contacts/$CONTACT_ID/topics \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '[
+    {
+      "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
+      "subscription": "opt_out"
+    }
+  ]'
+```
+
+Each subscription must be either `opt_in` or `opt_out`.
+
+## Topic defaults
+
+The topic's `default_subscription` determines the starting behavior when a contact has not explicitly recorded a preference. Updating the contact's subscription records the contact-specific state for that topic.
+
+<Note>
+Topic subscriptions are independent from the contact's `unsubscribed` email flag and `sms_consent_status`. Keep each preference layer accurate for its intended purpose.
+</Note>
