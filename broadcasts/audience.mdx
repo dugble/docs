@@ -1,0 +1,47 @@
+---
+title: Audience
+description: Understand how Dugble determines which contacts are eligible for a broadcast.
+---
+
+A broadcast starts with a segment, but segment membership alone does not guarantee delivery. Dugble evaluates each contact against email eligibility rules before the message is queued.
+
+## Starting audience
+
+The broadcast's `segment_id` defines the starting audience. Contacts in that segment become broadcast candidates when recipients are materialized.
+
+For each candidate, Dugble stores a contact snapshot that includes identity fields and custom properties used during rendering.
+
+## Exclusion rules
+
+A contact can be excluded when:
+
+- the email address is invalid
+- the contact is globally unsubscribed from email
+- the email address is suppressed
+- the broadcast has a topic and the contact's effective subscription for that topic is `opt_out`
+
+These exclusions are recorded on the broadcast recipient with an `exclusion_reason` such as `invalid_email`, `global_unsubscribe`, `suppressed`, or `topic_unsubscribed`.
+
+## Topic preferences
+
+When a broadcast has a `topic_id`, Dugble evaluates the contact's explicit topic subscription. If no contact-specific preference exists, the topic's `default_subscription` is used.
+
+A resulting `opt_out` excludes the contact from the broadcast.
+
+If no topic is attached to the broadcast, topic subscription rules are not applied.
+
+## Eligibility is checked again before fanout
+
+Dugble rechecks important eligibility conditions before an individual recipient is queued. This helps catch changes that happen after the initial audience snapshot, such as a new suppression, a global unsubscribe, or a topic opt-out.
+
+A contact that is no longer available can also be excluded at this stage.
+
+## Audience and eligible counts
+
+`audience_count` represents the starting audience captured from the segment. `eligible_count` represents the recipients that remain after exclusions are applied.
+
+Use the exclusion summary when you need to understand why contacts were removed from the send.
+
+<Note>
+Segments answer who you want to target. Subscriptions, unsubscribe state, and suppressions answer who is allowed to receive the email.
+</Note>
