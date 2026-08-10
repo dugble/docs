@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Dugble API",
-    "description": "Programmatic access to Dugble email, SMS, sending infrastructure, contacts, audiences, suppressions, broadcasts, and wallet data. Authenticate with a team token sent as a Bearer token.",
+    "description": "Programmatic access to Dugble email, SMS, sending infrastructure, contacts, audiences, suppressions, and broadcasts. Authenticate with a team token sent as a Bearer token.",
     "version": "1.0.0",
     "contact": {
       "name": "Dugble Support",
@@ -29,14 +29,13 @@
     { "name": "Topics", "description": "Manage contact subscription topics." },
     { "name": "Segments", "description": "Manage audience segments." },
     { "name": "Suppressions", "description": "Manage suppressed email recipients." },
-    { "name": "Broadcasts", "description": "Create, schedule, and analyze email broadcasts." },
-    { "name": "Wallet", "description": "Inspect team wallet balances and ledger entries." }
+    { "name": "Broadcasts", "description": "Create, schedule, and analyze email broadcasts." }
   ],
   "paths": {
     "/emails": {
       "get": {
         "operationId": "listEmails",
-        "summary": "List emails",
+        "summary": "List Emails",
         "description": "Returns email messages belonging to the authenticated team.",
         "tags": ["Email"],
         "parameters": [
@@ -53,7 +52,7 @@
       },
       "post": {
         "operationId": "sendEmail",
-        "summary": "Send an email",
+        "summary": "Send Email",
         "description": "Queues an email for immediate or scheduled delivery.",
         "tags": ["Email"],
         "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
@@ -89,7 +88,7 @@
     "/emails/batch": {
       "post": {
         "operationId": "sendEmailBatch",
-        "summary": "Send a batch of emails",
+        "summary": "Send Batch Emails",
         "description": "Atomically queues up to 100 emails. Attachments are not supported in batch requests. A top-level array is preferred; an object containing a `messages` array is also accepted.",
         "tags": ["Email"],
         "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
@@ -118,7 +117,7 @@
     "/emails/{message_id}": {
       "get": {
         "operationId": "getEmail",
-        "summary": "Retrieve an email",
+        "summary": "Retrieve Email",
         "tags": ["Email"],
         "parameters": [{ "$ref": "#/components/parameters/MessageId" }],
         "responses": {
@@ -131,7 +130,7 @@
       },
       "patch": {
         "operationId": "updateEmail",
-        "summary": "Update a scheduled email",
+        "summary": "Update Email",
         "description": "Changes the delivery time of an email that is still queued for scheduled delivery.",
         "tags": ["Email"],
         "parameters": [
@@ -154,7 +153,7 @@
     "/emails/{message_id}/cancel": {
       "post": {
         "operationId": "cancelEmail",
-        "summary": "Cancel a scheduled email",
+        "summary": "Cancel Email",
         "tags": ["Email"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -172,7 +171,7 @@
     "/emails/{message_id}/events": {
       "get": {
         "operationId": "listEmailEvents",
-        "summary": "List email events",
+        "summary": "List Email Events",
         "description": "Returns delivery events for an email message.",
         "tags": ["Email"],
         "parameters": [
@@ -191,7 +190,7 @@
     "/sms": {
       "get": {
         "operationId": "listSmsMessages",
-        "summary": "List SMS messages",
+        "summary": "List SMS",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
@@ -207,7 +206,7 @@
       },
       "post": {
         "operationId": "sendSms",
-        "summary": "Send an SMS",
+        "summary": "Send SMS",
         "description": "Queues an SMS for immediate or scheduled delivery. Recipient numbers must use international format.",
         "tags": ["SMS"],
         "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
@@ -242,7 +241,7 @@
     "/sms/batch": {
       "post": {
         "operationId": "sendSmsBatch",
-        "summary": "Send a batch of SMS messages",
+        "summary": "Send Batch SMS",
         "description": "Atomically validates, prices, charges, and queues up to 100 SMS messages. A top-level array is preferred; an object containing a `messages` array is also accepted.",
         "tags": ["SMS"],
         "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
@@ -271,7 +270,7 @@
     "/sms/{message_id}": {
       "get": {
         "operationId": "getSmsMessage",
-        "summary": "Retrieve an SMS",
+        "summary": "Retrieve SMS",
         "tags": ["SMS"],
         "parameters": [{ "$ref": "#/components/parameters/MessageId" }],
         "responses": {
@@ -284,7 +283,7 @@
       },
       "patch": {
         "operationId": "updateSmsMessage",
-        "summary": "Update a scheduled SMS",
+        "summary": "Update SMS",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -306,7 +305,7 @@
     "/sms/{message_id}/cancel": {
       "post": {
         "operationId": "cancelSmsMessage",
-        "summary": "Cancel a scheduled SMS",
+        "summary": "Cancel SMS",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -324,7 +323,7 @@
     "/sms/{message_id}/events": {
       "get": {
         "operationId": "listSmsEvents",
-        "summary": "List SMS events",
+        "summary": "List SMS Events",
         "description": "Returns delivery events for an SMS message.",
         "tags": ["SMS"],
         "parameters": [
@@ -343,7 +342,7 @@
     "/sms/{message_id}/sync-status": {
       "post": {
         "operationId": "syncSmsStatus",
-        "summary": "Sync SMS delivery status",
+        "summary": "Sync SMS Status",
         "description": "Refreshes the delivery status from the SMS provider.",
         "tags": ["SMS"],
         "parameters": [
@@ -362,7 +361,7 @@
     "/domains": {
       "get": {
         "operationId": "listDomains",
-        "summary": "List domains",
+        "summary": "List Domains",
         "tags": ["Domains"],
         "responses": {
           "200": {
@@ -374,7 +373,7 @@
       },
       "post": {
         "operationId": "createDomain",
-        "summary": "Create a domain",
+        "summary": "Create Domain",
         "description": "Creates and provisions a sending domain. Provisioning may be asynchronous while email infrastructure is being prepared.",
         "tags": ["Domains"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
@@ -415,7 +414,7 @@
     "/domains/{domain_id}": {
       "get": {
         "operationId": "getDomain",
-        "summary": "Retrieve a domain",
+        "summary": "Retrieve Domain",
         "tags": ["Domains"],
         "parameters": [{ "$ref": "#/components/parameters/DomainId" }],
         "responses": {
@@ -428,7 +427,7 @@
       },
       "delete": {
         "operationId": "deleteDomain",
-        "summary": "Delete a domain",
+        "summary": "Delete Domain",
         "tags": ["Domains"],
         "parameters": [
           { "$ref": "#/components/parameters/DomainId" },
@@ -446,7 +445,7 @@
     "/domains/{domain_id}/verify": {
       "post": {
         "operationId": "verifyDomain",
-        "summary": "Verify a domain",
+        "summary": "Verify Domain",
         "description": "Checks the domain's provider and DNS verification state and returns the updated domain.",
         "tags": ["Domains"],
         "parameters": [
@@ -465,7 +464,7 @@
     "/sender-ids": {
       "get": {
         "operationId": "listSenderIds",
-        "summary": "List sender IDs",
+        "summary": "List Sender IDs",
         "tags": ["Sender IDs"],
         "responses": {
           "200": {
@@ -477,7 +476,7 @@
       },
       "post": {
         "operationId": "createSenderId",
-        "summary": "Create a sender ID",
+        "summary": "Create Sender ID",
         "tags": ["Sender IDs"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -501,7 +500,7 @@
     "/sender-ids/{sender_id}": {
       "get": {
         "operationId": "getSenderId",
-        "summary": "Retrieve a sender ID",
+        "summary": "Retrieve Sender ID",
         "tags": ["Sender IDs"],
         "parameters": [{ "$ref": "#/components/parameters/SenderId" }],
         "responses": {
@@ -514,7 +513,7 @@
       },
       "delete": {
         "operationId": "deleteSenderId",
-        "summary": "Delete a sender ID",
+        "summary": "Delete Sender ID",
         "description": "Deactivates the sender ID and returns its updated state.",
         "tags": ["Sender IDs"],
         "parameters": [
@@ -533,7 +532,7 @@
     "/contacts": {
       "get": {
         "operationId": "listContacts",
-        "summary": "List contacts",
+        "summary": "List Contacts",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
@@ -549,7 +548,7 @@
       },
       "post": {
         "operationId": "createContact",
-        "summary": "Create a contact",
+        "summary": "Create Contact",
         "tags": ["Contacts"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -580,7 +579,7 @@
     "/contacts/{contact_id}": {
       "get": {
         "operationId": "getContact",
-        "summary": "Retrieve a contact",
+        "summary": "Retrieve Contact",
         "tags": ["Contacts"],
         "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
         "responses": {
@@ -593,7 +592,7 @@
       },
       "patch": {
         "operationId": "updateContact",
-        "summary": "Update a contact",
+        "summary": "Update Contact",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -613,7 +612,7 @@
       },
       "delete": {
         "operationId": "deleteContact",
-        "summary": "Delete a contact",
+        "summary": "Delete Contact",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -631,7 +630,7 @@
     "/contacts/{contact_id}/topics": {
       "get": {
         "operationId": "listContactTopics",
-        "summary": "List contact topics",
+        "summary": "List Contact Topics",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -649,7 +648,7 @@
       },
       "patch": {
         "operationId": "updateContactTopics",
-        "summary": "Update contact topic subscriptions",
+        "summary": "Update Contact Topics",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -671,7 +670,7 @@
     "/contacts/{contact_id}/segments": {
       "get": {
         "operationId": "listContactSegments",
-        "summary": "List contact segments",
+        "summary": "List Contact Segments",
         "tags": ["Contacts"],
         "parameters": [{ "$ref": "#/components/parameters/ContactId" }],
         "responses": {
@@ -686,7 +685,7 @@
     "/contacts/{contact_id}/segments/{segment_id}": {
       "post": {
         "operationId": "addContactToSegment",
-        "summary": "Add a contact to a segment",
+        "summary": "Add Contact to Segment",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -707,7 +706,7 @@
       },
       "delete": {
         "operationId": "removeContactFromSegment",
-        "summary": "Remove a contact from a segment",
+        "summary": "Remove Contact from Segment",
         "tags": ["Contacts"],
         "parameters": [
           { "$ref": "#/components/parameters/ContactId" },
@@ -723,7 +722,7 @@
     "/topics": {
       "get": {
         "operationId": "listTopics",
-        "summary": "List topics",
+        "summary": "List Topics",
         "tags": ["Topics"],
         "parameters": [
           { "$ref": "#/components/parameters/CursorLimit" },
@@ -740,7 +739,7 @@
       },
       "post": {
         "operationId": "createTopic",
-        "summary": "Create a topic",
+        "summary": "Create Topic",
         "tags": ["Topics"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -764,7 +763,7 @@
     "/topics/{topic_id}": {
       "get": {
         "operationId": "getTopic",
-        "summary": "Retrieve a topic",
+        "summary": "Retrieve Topic",
         "tags": ["Topics"],
         "parameters": [{ "$ref": "#/components/parameters/TopicId" }],
         "responses": {
@@ -777,7 +776,7 @@
       },
       "patch": {
         "operationId": "updateTopic",
-        "summary": "Update a topic",
+        "summary": "Update Topic",
         "tags": ["Topics"],
         "parameters": [
           { "$ref": "#/components/parameters/TopicId" },
@@ -797,7 +796,7 @@
       },
       "delete": {
         "operationId": "deleteTopic",
-        "summary": "Delete a topic",
+        "summary": "Delete Topic",
         "tags": ["Topics"],
         "parameters": [
           { "$ref": "#/components/parameters/TopicId" },
@@ -815,7 +814,7 @@
     "/segments": {
       "get": {
         "operationId": "listSegments",
-        "summary": "List segments",
+        "summary": "List Segments",
         "tags": ["Segments"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
@@ -831,7 +830,7 @@
       },
       "post": {
         "operationId": "createSegment",
-        "summary": "Create a segment",
+        "summary": "Create Segment",
         "tags": ["Segments"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -850,7 +849,7 @@
     "/segments/{segment_id}": {
       "get": {
         "operationId": "getSegment",
-        "summary": "Retrieve a segment",
+        "summary": "Retrieve Segment",
         "tags": ["Segments"],
         "parameters": [{ "$ref": "#/components/parameters/SegmentId" }],
         "responses": {
@@ -863,7 +862,7 @@
       },
       "delete": {
         "operationId": "deleteSegment",
-        "summary": "Delete a segment",
+        "summary": "Delete Segment",
         "tags": ["Segments"],
         "parameters": [
           { "$ref": "#/components/parameters/SegmentId" },
@@ -881,7 +880,7 @@
     "/segments/{segment_id}/contacts": {
       "get": {
         "operationId": "listSegmentContacts",
-        "summary": "List segment contacts",
+        "summary": "List Segment Contacts",
         "tags": ["Segments"],
         "parameters": [
           { "$ref": "#/components/parameters/SegmentId" },
@@ -900,7 +899,7 @@
     "/suppressions": {
       "get": {
         "operationId": "listSuppressions",
-        "summary": "List suppressions",
+        "summary": "List Suppressions",
         "tags": ["Suppressions"],
         "parameters": [
           { "$ref": "#/components/parameters/CursorLimit" },
@@ -924,7 +923,7 @@
       },
       "post": {
         "operationId": "createSuppression",
-        "summary": "Create a suppression",
+        "summary": "Create Suppression",
         "tags": ["Suppressions"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -943,7 +942,7 @@
     "/suppressions/batch/add": {
       "post": {
         "operationId": "batchAddSuppressions",
-        "summary": "Add suppressions in batch",
+        "summary": "Add Suppressions",
         "tags": ["Suppressions"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -962,7 +961,7 @@
     "/suppressions/batch/remove": {
       "post": {
         "operationId": "batchRemoveSuppressions",
-        "summary": "Remove suppressions in batch",
+        "summary": "Remove Suppressions",
         "description": "Provide either `emails` or `ids`, but not both. Each batch supports up to 100 suppressions.",
         "tags": ["Suppressions"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
@@ -982,7 +981,7 @@
     "/suppressions/{suppression}": {
       "get": {
         "operationId": "getSuppression",
-        "summary": "Retrieve a suppression",
+        "summary": "Retrieve Suppression",
         "description": "The identifier may be a suppression UUID or an email address.",
         "tags": ["Suppressions"],
         "parameters": [{ "$ref": "#/components/parameters/SuppressionIdentifier" }],
@@ -996,7 +995,7 @@
       },
       "delete": {
         "operationId": "deleteSuppression",
-        "summary": "Delete a suppression",
+        "summary": "Delete Suppression",
         "description": "The identifier may be a suppression UUID or an email address.",
         "tags": ["Suppressions"],
         "parameters": [
@@ -1015,7 +1014,7 @@
     "/broadcasts": {
       "get": {
         "operationId": "listBroadcasts",
-        "summary": "List broadcasts",
+        "summary": "List Broadcasts",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
@@ -1031,7 +1030,7 @@
       },
       "post": {
         "operationId": "createBroadcast",
-        "summary": "Create a broadcast",
+        "summary": "Create Broadcast",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -1059,7 +1058,7 @@
     "/broadcasts/{broadcast}": {
       "get": {
         "operationId": "getBroadcast",
-        "summary": "Retrieve a broadcast",
+        "summary": "Retrieve Broadcast",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/BroadcastId" }],
         "responses": {
@@ -1072,7 +1071,7 @@
       },
       "patch": {
         "operationId": "updateBroadcast",
-        "summary": "Update a broadcast",
+        "summary": "Update Broadcast",
         "description": "Only draft broadcasts can be updated. Supply the current revision for optimistic concurrency control.",
         "tags": ["Broadcasts"],
         "parameters": [
@@ -1093,7 +1092,7 @@
       },
       "delete": {
         "operationId": "deleteBroadcast",
-        "summary": "Delete a broadcast",
+        "summary": "Delete Broadcast",
         "description": "Only draft or canceled broadcasts can be deleted.",
         "tags": ["Broadcasts"],
         "parameters": [
@@ -1112,7 +1111,7 @@
     "/broadcasts/{broadcast}/send": {
       "post": {
         "operationId": "sendBroadcast",
-        "summary": "Send or schedule a broadcast",
+        "summary": "Send Broadcast",
         "description": "Queues a draft broadcast immediately, or schedules it when `scheduled_at` is supplied.",
         "tags": ["Broadcasts"],
         "parameters": [
@@ -1135,7 +1134,7 @@
     "/broadcasts/{broadcast}/cancel": {
       "post": {
         "operationId": "cancelBroadcast",
-        "summary": "Cancel a broadcast",
+        "summary": "Cancel Broadcast",
         "description": "Cancels a scheduled broadcast.",
         "tags": ["Broadcasts"],
         "parameters": [
@@ -1154,7 +1153,7 @@
     "/broadcasts/{broadcast}/duplicate": {
       "post": {
         "operationId": "duplicateBroadcast",
-        "summary": "Duplicate a broadcast",
+        "summary": "Duplicate Broadcast",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1176,7 +1175,7 @@
     "/broadcasts/{broadcast}/preview": {
       "post": {
         "operationId": "previewBroadcast",
-        "summary": "Preview a broadcast",
+        "summary": "Preview Broadcast",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1198,7 +1197,7 @@
     "/broadcasts/{broadcast}/recipients": {
       "get": {
         "operationId": "listBroadcastRecipients",
-        "summary": "List broadcast recipients",
+        "summary": "List Broadcast Recipients",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1217,7 +1216,7 @@
     "/broadcasts/{broadcast}/exclusions": {
       "get": {
         "operationId": "getBroadcastExclusions",
-        "summary": "Get broadcast exclusions",
+        "summary": "Get Broadcast Exclusions",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/BroadcastId" }],
         "responses": {
@@ -1232,45 +1231,13 @@
     "/broadcasts/{broadcast}/analytics": {
       "get": {
         "operationId": "getBroadcastAnalytics",
-        "summary": "Get broadcast analytics",
+        "summary": "Get Broadcast Analytics",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/BroadcastId" }],
         "responses": {
           "200": {
             "description": "Broadcast analytics retrieved successfully.",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BroadcastAnalyticsEnvelope" } } }
-          },
-          "default": { "$ref": "#/components/responses/Error" }
-        }
-      }
-    },
-    "/wallet": {
-      "get": {
-        "operationId": "getWallet",
-        "summary": "Retrieve the wallet",
-        "tags": ["Wallet"],
-        "responses": {
-          "200": {
-            "description": "Wallet retrieved successfully.",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WalletEnvelope" } } }
-          },
-          "default": { "$ref": "#/components/responses/Error" }
-        }
-      }
-    },
-    "/wallet/ledger": {
-      "get": {
-        "operationId": "listWalletLedger",
-        "summary": "List wallet ledger entries",
-        "tags": ["Wallet"],
-        "parameters": [
-          { "$ref": "#/components/parameters/LimitOffset" },
-          { "$ref": "#/components/parameters/Offset" }
-        ],
-        "responses": {
-          "200": {
-            "description": "Wallet ledger retrieved successfully.",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WalletLedgerEnvelope" } } }
           },
           "default": { "$ref": "#/components/responses/Error" }
         }
@@ -2043,42 +2010,7 @@
       "BroadcastRecipientListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/BroadcastRecipient" } } } },
       "BroadcastExclusionEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastExclusionSummary" } } },
       "BroadcastAnalyticsEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastAnalytics" } } },
-      "BroadcastPreviewEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastPreview" } } },
-      "WalletResource": {
-        "type": "object",
-        "properties": {
-          "team_id": { "type": "string", "format": "uuid" },
-          "billing_market": { "type": "string" },
-          "currency": { "type": "string" },
-          "balance_units": { "type": "integer", "format": "int64" },
-          "tier": { "type": "string" },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
-        }
-      },
-      "LedgerEntry": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "team_id": { "type": "string", "format": "uuid" },
-          "usage_authorization_id": { "type": "string", "format": "uuid" },
-          "amount_units": { "type": "integer", "format": "int64" },
-          "transaction_type": { "type": "string" },
-          "reference_id": { "type": "string" },
-          "created_at": { "type": "string", "format": "date-time" }
-        }
-      },
-      "WalletLedgerPage": {
-        "type": "object",
-        "required": ["entries", "limit", "offset"],
-        "properties": {
-          "entries": { "type": "array", "items": { "$ref": "#/components/schemas/LedgerEntry" } },
-          "limit": { "type": "integer", "format": "int32" },
-          "offset": { "type": "integer", "format": "int32" }
-        }
-      },
-      "WalletEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/WalletResource" } } },
-      "WalletLedgerEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/WalletLedgerPage" } } }
+      "BroadcastPreviewEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastPreview" } } }
     }
   }
 }
