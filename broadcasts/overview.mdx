@@ -1,0 +1,54 @@
+---
+title: Broadcasts
+description: Understand how Dugble sends one email message to a reusable audience.
+---
+
+Broadcasts let you send one email template to a segment of contacts while Dugble applies audience eligibility rules before delivery.
+
+A broadcast connects four things:
+
+- a **segment** that defines the starting audience
+- an optional **topic** that applies subscription preferences
+- a **message template** that provides the email content
+- optional **variable bindings** used when rendering the template
+
+## Broadcast lifecycle
+
+A new broadcast starts as a `draft`. Drafts can be edited and previewed before sending.
+
+When you send immediately, Dugble queues the broadcast for fanout. When you choose a future delivery time, the broadcast moves to `scheduled` first and is queued when that time arrives.
+
+Broadcast states include:
+
+`draft` → `scheduled` → `queued` → `sent`
+
+A broadcast can also become `failed` or `canceled` depending on the outcome.
+
+<Note>
+Only draft broadcasts can be edited or sent. Only scheduled broadcasts can be canceled.
+</Note>
+
+## Audience counts
+
+A broadcast tracks audience and fanout totals such as `audience_count`, `eligible_count`, `suppressed_count`, `queued_count`, and `failed_count`.
+
+These counts help distinguish the size of the selected segment from the number of contacts that were actually eligible to receive the message.
+
+## Templates are versioned at send time
+
+A broadcast references a message template while it is a draft. Before sending, the template must have a published version. Dugble records that published version for the broadcast so the send uses a stable template version.
+
+<CardGroup cols={2}>
+  <Card title="Audience" href="/broadcasts/audience">
+    Learn how segment membership, subscriptions, and suppressions affect eligibility.
+  </Card>
+  <Card title="Sending" href="/broadcasts/sending">
+    Understand previewing, immediate sends, scheduling, and cancellation.
+  </Card>
+  <Card title="Analytics" href="/broadcasts/analytics">
+    Interpret delivery and engagement metrics for a broadcast.
+  </Card>
+  <Card title="Audiences" href="/audiences/overview">
+    Review contacts, topics, subscriptions, segments, and suppressions.
+  </Card>
+</CardGroup>

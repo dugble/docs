@@ -1,7 +1,47 @@
 ---
-title: Broadcast analytics
+title: Analytics
+description: Understand delivery, exclusion, and engagement metrics for a broadcast.
 ---
 
-# Analytics
+Broadcast analytics summarize what happened from audience selection through email delivery and engagement.
 
-Placeholder: Broadcast metrics and reporting.
+## Core metrics
+
+A broadcast can report:
+
+- `audience` — contacts captured from the selected segment
+- `eligible` — contacts that remained after eligibility checks
+- `excluded` — contacts removed before delivery
+- `queued` — recipient emails queued for delivery
+- `delivered` — messages reported delivered
+- `bounced` — messages reported bounced
+- `complained` — messages associated with a complaint
+- `failed` — recipients or messages that failed
+- `opened` — recipients with an observed open event
+- `clicked` — recipients with an observed click event
+
+## Audience metrics
+
+The difference between `audience` and `eligible` represents contacts removed by audience eligibility rules.
+
+Use the exclusion summary to inspect counts grouped by reason, such as global unsubscribe, suppression, invalid email, or topic opt-out.
+
+## Delivery metrics
+
+`queued` represents recipients handed off to the normal email delivery pipeline. Delivery outcomes can then change independently for each recipient.
+
+A lower delivered count than queued count does not necessarily indicate a fanout problem. Some messages may still be in progress, while others may later bounce or fail.
+
+## Engagement metrics
+
+`opened` and `clicked` summarize tracked engagement events associated with the broadcast's email messages.
+
+Treat these metrics as observed signals rather than perfect measurements. Email client privacy features and tracking behavior can affect whether open events are visible.
+
+## Recipient-level investigation
+
+Aggregate analytics are best for understanding the overall result. When you need to investigate a specific address, use the broadcast recipient list and the linked email message where available.
+
+<Card title="Audience" href="/broadcasts/audience">
+  Review how recipients become eligible or excluded before fanout.
+</Card>
