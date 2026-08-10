@@ -1,70 +1,78 @@
 ---
 title: "Sender domains"
-"sidebarTitle": "Introduction"
+sidebarTitle: "Introduction"
 description: "Authenticate the domains used to send email through Dugble"
 ---
 
-A sender domain is the domain after `@` in your email's From address. Authenticating that domain allows receiving mail systems to verify that Dugble is authorized to send on its behalf.
+A sender domain is the domain used in the `From` address of your email. Authenticating that domain allows receiving mail systems to verify that Dugble is authorized to send on its behalf.
 
 For example, sending from `notifications@example.com` requires control of `example.com` or an appropriate sending subdomain such as `mail.example.com`.
 
 ## Why domain authentication matters
 
-Domain authentication helps you:
+Domain authentication helps you establish a consistent sender identity, reduce spoofing risk, and give receiving systems the SPF and DKIM signals they need to evaluate your mail.
 
-- Establish a consistent sender identity
-- Reduce spoofing risk
-- Improve inbox placement
-- Align SPF and DKIM with your sending infrastructure
-- Publish a DMARC policy for the visible From domain
+It also gives you the foundation for publishing a DMARC policy for your visible From domain.
 
 ## Add a sender domain
 
 <Steps>
   <Step title="Choose a sending domain">
-    Use a domain or subdomain you control. A dedicated subdomain such as
-    `mail.example.com` can separate transactional mail reputation from other
-    mail streams.
+    Use a domain or subdomain you control. A dedicated subdomain such as `mail.example.com` can separate transactional sending from other mail streams.
   </Step>
-  <Step title="Add it to Dugble">
-    Create the sender domain in your Dugble team and select the provider region
-    used for delivery. Dugble currently supports `us-east-1` and `eu-north-1`.
-    The first request in a region may report that email infrastructure is still
-    being prepared; retry the request shortly. New domains begin in the
-    `pending` state.
+  <Step title="Create the domain in Dugble">
+    Add the domain to your team and choose a supported sending region. Dugble currently supports `us-east-1` and `eu-north-1`.
   </Step>
   <Step title="Publish the DNS records">
-    Add every verification record shown by Dugble at your DNS provider. Copy
-    host names and values exactly.
+    Add every verification record returned by Dugble at your DNS provider. Copy host names and values exactly.
   </Step>
-  <Step title="Wait for verification">
-    DNS updates may take time to propagate. Do not send from the domain until
-    its Dugble status is `verified`.
+  <Step title="Verify the domain">
+    After DNS changes propagate, run domain verification again. Do not send from the domain until its status is `verified`.
   </Step>
 </Steps>
 
+## Provisioning
+
+Creating a domain may complete immediately or return an asynchronous provisioning response while Dugble prepares the sending infrastructure for the selected region.
+
+If provisioning is still in progress, wait for the suggested retry interval before checking again.
+
 ## Domain states
 
-| State      | Meaning                                                          |
-| ---------- | ---------------------------------------------------------------- |
-| `pending`  | The domain exists in Dugble but verification is incomplete.      |
-| `verified` | The required verification checks have passed.                    |
-| `failed`   | Verification failed; inspect the failure reason and DNS records. |
-| `disabled` | The domain is not currently available for sending.               |
+| State | Meaning |
+| --- | --- |
+| `not_started` | Verification has not started yet. |
+| `pending` | Verification is in progress or DNS records are still incomplete. |
+| `verified` | Required verification checks have passed. |
+| `partially_verified` | Some verification records have passed while others remain incomplete. |
+| `partially_failed` | Some verification checks passed and others failed. |
+| `failed` | Verification failed. Inspect the failure reason and DNS records. |
+| `temporary_failure` | Verification could not complete because of a temporary provider or DNS problem. |
+| `disabled` | The domain is not currently available for sending. |
 
 ## DNS guidance
 
-- Enter DNS names exactly as shown, noting whether your provider automatically appends the zone name.
+- Enter DNS names exactly as shown, noting whether your DNS provider automatically appends the zone name.
 - Do not proxy email authentication records through an HTTP proxy or CDN.
-- Avoid creating multiple SPF TXT records at the same host; merge authorized senders into one SPF policy.
-- Keep DKIM private keys with the sending provider. DNS contains only public verification material.
-- Lowering DNS TTL before a planned change can make later corrections propagate faster.
+- Avoid publishing multiple SPF TXT records at the same host.
+- Keep DKIM private keys with the sending provider; DNS contains only public verification material.
+- Allow time for DNS caches to expire after making changes.
 
 <Tip>
-  Use a dedicated sending subdomain when different systems or teams manage your
-  product email and your corporate mailbox infrastructure.
+Use a dedicated sending subdomain when different systems or teams manage product email and corporate mailbox infrastructure.
 </Tip>
 
-<Card title="DMARC" icon="shield-check" href="/domains/dmarc">
-  Add a domain-level policy and reporting for unauthenticated email.
-</Card>
+<CardGroup cols={2}>
+  <Card title="Verification" icon="badge-check" href="/domains/verification">
+    Check the DNS records required to activate a sender domain.
+  </Card>
+  <Card title="DKIM" icon="key" href="/domains/dkim">
+    Learn how DKIM authenticates mail signed for your domain.
+  </Card>
+  <Card title="SPF" icon="list-check" href="/domains/spf">
+    Understand SPF authorization and record management.
+  </Card>
+  <Card title="DMARC" icon="shield-check" href="/domains/dmarc">
+    Add policy and reporting for unauthenticated email.
+  </Card>
+</CardGroup>
