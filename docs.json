@@ -18,32 +18,42 @@
             "group": "Getting Started",
             "pages": [
               "overview",
-              "quickstart"
+              "quickstart",
+              "authentication"
             ]
           },
           {
             "group": "Email",
             "pages": [
               "emails/introduction",
+              "emails/sending-email",
               "emails/custom-headers",
+              "emails/attachments",
               "emails/schedule-email",
-              "emails/batch-sending"
+              "emails/batch-sending",
+              "emails/delivery-status",
+              "emails/events"
             ]
           },
           {
             "group": "SMS",
             "pages": [
               "sms/introduction",
+              "sms/sending-sms",
               "sms/sender-ids",
               "sms/schedule-sms",
               "sms/batch-sending",
-              "sms/delivery-status"
+              "sms/delivery-status",
+              "sms/events"
             ]
           },
           {
             "group": "Domains",
             "pages": [
               "domains/introduction",
+              "domains/verification",
+              "domains/dkim",
+              "domains/spf",
               "domains/dmarc"
             ]
           },
