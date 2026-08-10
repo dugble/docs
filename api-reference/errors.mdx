@@ -1,5 +1,45 @@
 ---
 title: Errors
+description: Understand Dugble API error responses and public error codes.
 ---
 
-Placeholder: Error codes and handling.
+Dugble returns structured JSON errors with an HTTP status code, a stable machine-readable error code, and a public message.
+
+## Error response
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Public error message"
+  }
+}
+```
+
+Internal causes are never serialized into API responses.
+
+## Error codes
+
+| Code | Typical HTTP status | Meaning |
+| --- | ---: | --- |
+| `BAD_REQUEST` | 400 | The request is malformed or contains invalid input. |
+| `UNAUTHORIZED` | 401 | Authentication is missing, invalid, expired, or revoked. |
+| `FORBIDDEN` | 403 | The authenticated principal does not have the required permission. |
+| `STEP_UP_REQUIRED` | 403 | A dashboard action requires more recent or stronger authentication. |
+| `NOT_FOUND` | 404 | The requested resource was not found. |
+| `CONFLICT` | 409 | The request conflicts with existing state, including idempotency conflicts. |
+| `PAYMENT_REQUIRED` | 402 | The operation requires available funds or billing action. |
+| `PAYLOAD_TOO_LARGE` | 413 | The request body exceeds the accepted size. |
+| `UNPROCESSABLE_ENTITY` | 422 | The request is syntactically valid but cannot be processed. |
+| `TOO_MANY_REQUESTS` | 429 | The request was rate limited. |
+| `INTERNAL_ERROR` | 500 | Dugble encountered an unexpected internal error. |
+| `SERVICE_UNAVAILABLE` | 503 | A required service is temporarily unavailable. |
+
+## Handling errors
+
+Use the HTTP status for broad retry and control-flow decisions, and use `error.code` for application-specific handling.
+
+For example, do not automatically retry most `4xx` errors. A `429 TOO_MANY_REQUESTS` or some transient `5xx` responses may be retryable with backoff, while a `400 BAD_REQUEST` should be corrected before retrying.
+
+When retrying a mutation, reuse the same `Idempotency-Key`. See [Idempotency](/api-reference/idempotency).

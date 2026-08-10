@@ -16,7 +16,10 @@
         "groups": [
           {
             "group": "Getting Started",
-            "pages": ["overview", "quickstart"]
+            "pages": [
+              "overview",
+              "quickstart"
+            ]
           },
           {
             "group": "Email",
@@ -39,7 +42,10 @@
           },
           {
             "group": "Domains",
-            "pages": ["domains/introduction", "domains/dmarc"]
+            "pages": [
+              "domains/introduction",
+              "domains/dmarc"
+            ]
           },
           {
             "group": "Webhooks",
@@ -61,6 +67,7 @@
             "group": "Overview",
             "pages": [
               "api-reference/introduction",
+              "api-reference/authentication",
               "api-reference/errors",
               "api-reference/idempotency"
             ]
@@ -73,7 +80,8 @@
               "GET /emails",
               "GET /emails/{message_id}",
               "PATCH /emails/{message_id}",
-              "POST /emails/{message_id}/cancel"
+              "POST /emails/{message_id}/cancel",
+              "GET /emails/{message_id}/events"
             ]
           },
           {
@@ -85,7 +93,90 @@
               "GET /sms/{message_id}",
               "PATCH /sms/{message_id}",
               "POST /sms/{message_id}/cancel",
+              "GET /sms/{message_id}/events",
               "POST /sms/{message_id}/sync-status"
+            ]
+          },
+          {
+            "group": "Domains",
+            "pages": [
+              "POST /domains",
+              "GET /domains",
+              "GET /domains/{domain_id}",
+              "POST /domains/{domain_id}/verify",
+              "DELETE /domains/{domain_id}"
+            ]
+          },
+          {
+            "group": "Sender IDs",
+            "pages": [
+              "POST /sender-ids",
+              "GET /sender-ids",
+              "GET /sender-ids/{sender_id}",
+              "DELETE /sender-ids/{sender_id}"
+            ]
+          },
+          {
+            "group": "Contacts",
+            "pages": [
+              "POST /contacts",
+              "GET /contacts",
+              "GET /contacts/{contact_id}",
+              "PATCH /contacts/{contact_id}",
+              "DELETE /contacts/{contact_id}",
+              "GET /contacts/{contact_id}/topics",
+              "PATCH /contacts/{contact_id}/topics",
+              "GET /contacts/{contact_id}/segments",
+              "POST /contacts/{contact_id}/segments/{segment_id}",
+              "DELETE /contacts/{contact_id}/segments/{segment_id}"
+            ]
+          },
+          {
+            "group": "Topics",
+            "pages": [
+              "POST /topics",
+              "GET /topics",
+              "GET /topics/{topic_id}",
+              "PATCH /topics/{topic_id}",
+              "DELETE /topics/{topic_id}"
+            ]
+          },
+          {
+            "group": "Segments",
+            "pages": [
+              "POST /segments",
+              "GET /segments",
+              "GET /segments/{segment_id}",
+              "GET /segments/{segment_id}/contacts",
+              "DELETE /segments/{segment_id}"
+            ]
+          },
+          {
+            "group": "Suppressions",
+            "pages": [
+              "POST /suppressions",
+              "GET /suppressions",
+              "GET /suppressions/{suppression}",
+              "DELETE /suppressions/{suppression}",
+              "POST /suppressions/batch/add",
+              "POST /suppressions/batch/remove"
+            ]
+          },
+          {
+            "group": "Broadcasts",
+            "pages": [
+              "POST /broadcasts",
+              "GET /broadcasts",
+              "GET /broadcasts/{broadcast}",
+              "PATCH /broadcasts/{broadcast}",
+              "DELETE /broadcasts/{broadcast}",
+              "POST /broadcasts/{broadcast}/send",
+              "POST /broadcasts/{broadcast}/cancel",
+              "POST /broadcasts/{broadcast}/duplicate",
+              "POST /broadcasts/{broadcast}/preview",
+              "GET /broadcasts/{broadcast}/recipients",
+              "GET /broadcasts/{broadcast}/exclusions",
+              "GET /broadcasts/{broadcast}/analytics"
             ]
           }
         ]
