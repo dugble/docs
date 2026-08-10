@@ -1,0 +1,566 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Dugble Contact Properties API",
+    "description": "Manage typed custom property definitions for contacts. Authenticate with a team token sent as a Bearer token.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.dugble.com",
+      "description": "Production"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Contact Properties",
+      "description": "Manage typed custom property definitions used by contacts."
+    }
+  ],
+  "paths": {
+    "/contact-properties": {
+      "get": {
+        "operationId": "listContactProperties",
+        "summary": "List Contact Properties",
+        "description": "Returns contact property definitions configured for the authenticated team.",
+        "tags": [
+          "Contact Properties"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CursorLimit"
+          },
+          {
+            "$ref": "#/components/parameters/After"
+          },
+          {
+            "$ref": "#/components/parameters/Before"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact properties retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactPropertyListEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createContactProperty",
+        "summary": "Create Contact Property",
+        "description": "Creates a typed custom property definition for contacts. Property keys are unique within the team.",
+        "tags": [
+          "Contact Properties"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactPropertyCreateRequest"
+              },
+              "examples": {
+                "stringProperty": {
+                  "summary": "String property",
+                  "value": {
+                    "key": "company_name",
+                    "type": "string",
+                    "fallback_value": "Unknown"
+                  }
+                },
+                "numberProperty": {
+                  "summary": "Number property",
+                  "value": {
+                    "key": "lifetime_value",
+                    "type": "number",
+                    "fallback_value": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact property created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactPropertyMutationEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/contact-properties/{property_id}": {
+      "get": {
+        "operationId": "getContactProperty",
+        "summary": "Retrieve Contact Property",
+        "description": "Retrieves a single contact property definition by ID.",
+        "tags": [
+          "Contact Properties"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact property retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactPropertyEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateContactProperty",
+        "summary": "Update Contact Property",
+        "description": "Replaces the fallback value for a contact property. Send `null` to clear the fallback value.",
+        "tags": [
+          "Contact Properties"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactPropertyUpdateRequest"
+              },
+              "example": {
+                "fallback_value": "Unknown"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact property updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactPropertyMutationEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteContactProperty",
+        "summary": "Delete Contact Property",
+        "description": "Deletes a contact property definition from the authenticated team.",
+        "tags": [
+          "Contact Properties"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact property deleted successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactPropertyDeleteEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Dugble team token",
+        "description": "Team token from the Dugble dashboard."
+      }
+    },
+    "parameters": {
+      "PropertyId": {
+        "name": "property_id",
+        "in": "path",
+        "required": true,
+        "description": "Contact property UUID.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "CursorLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of records to return. Defaults to 20 and must be between 1 and 100.",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "After": {
+        "name": "after",
+        "in": "query",
+        "required": false,
+        "description": "Return records after this contact property UUID cursor. Cannot be combined with before.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Before": {
+        "name": "before",
+        "in": "query",
+        "required": false,
+        "description": "Return records before this contact property UUID cursor. Cannot be combined with after.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "The request failed. See the HTTP status and structured error code for the category.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "error"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "BAD_REQUEST",
+                  "UNAUTHORIZED",
+                  "FORBIDDEN",
+                  "STEP_UP_REQUIRED",
+                  "NOT_FOUND",
+                  "CONFLICT",
+                  "PAYMENT_REQUIRED",
+                  "PAYLOAD_TOO_LARGE",
+                  "UNPROCESSABLE_ENTITY",
+                  "TOO_MANY_REQUESTS",
+                  "INTERNAL_ERROR",
+                  "SERVICE_UNAVAILABLE"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "ContactPropertyValue": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Fallback value. Non-null values must match the contact property's declared type."
+      },
+      "ContactPropertyCreateRequest": {
+        "type": "object",
+        "required": [
+          "key",
+          "type"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[A-Za-z0-9_]+$",
+            "description": "Unique property key containing only letters, numbers, and underscores."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "string",
+              "number"
+            ],
+            "description": "Declared value type for the property."
+          },
+          "fallback_value": {
+            "$ref": "#/components/schemas/ContactPropertyValue"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ContactPropertyUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "fallback_value": {
+            "$ref": "#/components/schemas/ContactPropertyValue"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ContactPropertyMutation": {
+        "type": "object",
+        "required": [
+          "object",
+          "id"
+        ],
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "contact_property"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ContactProperty": {
+        "type": "object",
+        "required": [
+          "object",
+          "id",
+          "key",
+          "type",
+          "created_at"
+        ],
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "contact_property"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "string",
+              "number"
+            ]
+          },
+          "fallback_value": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Configured fallback value. Omitted when no fallback is set."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ContactPropertyList": {
+        "type": "object",
+        "required": [
+          "object",
+          "has_more",
+          "data"
+        ],
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "list"
+            ]
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactProperty"
+            }
+          }
+        }
+      },
+      "ContactPropertyDelete": {
+        "type": "object",
+        "required": [
+          "object",
+          "id",
+          "deleted"
+        ],
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "contact_property"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "ContactPropertyMutationEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/ContactPropertyMutation"
+          }
+        }
+      },
+      "ContactPropertyEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/ContactProperty"
+          }
+        }
+      },
+      "ContactPropertyListEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/ContactPropertyList"
+          }
+        }
+      },
+      "ContactPropertyDeleteEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/ContactPropertyDelete"
+          }
+        }
+      }
+    }
+  }
+}
