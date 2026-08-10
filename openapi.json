@@ -658,8 +658,8 @@
         ],
         "responses": {
           "200": {
-            "description": "Contact topics retrieved successfully. This endpoint returns the topic-list object directly rather than the standard success envelope.",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactTopicList" } } }
+            "description": "Contact topics retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactTopicListEnvelope" } } }
           },
           "default": { "$ref": "#/components/responses/Error" }
         }
@@ -679,8 +679,8 @@
         },
         "responses": {
           "200": {
-            "description": "Contact topic subscriptions updated. This endpoint returns the mutation object directly rather than the standard success envelope.",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactTopicUpdateResponse" } } }
+            "description": "Contact topic subscriptions updated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactTopicUpdateEnvelope" } } }
           },
           "default": { "$ref": "#/components/responses/Error" }
         }
@@ -1807,6 +1807,7 @@
           "data": { "type": "array", "items": { "$ref": "#/components/schemas/ContactTopic" } }
         }
       },
+      "ContactTopicListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/ContactTopicList" } } },
       "ContactTopicUpdateRequest": {
         "type": "array",
         "items": {
@@ -1819,6 +1820,7 @@
         }
       },
       "ContactTopicUpdateResponse": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } },
+      "ContactTopicUpdateEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/ContactTopicUpdateResponse" } } },
       "SegmentMembership": {
         "type": "object",
         "properties": {
