@@ -3,19 +3,20 @@ title: Attachments
 description: Add file attachments and inline assets to emails sent with Dugble.
 ---
 
-Dugble supports attachments on individual email sends. Attachments can be provided as encoded content or referenced by a path supported by the email delivery layer.
+Dugble supports attachments on individual email sends. Attachment content must be provided as Base64-encoded data.
 
 ## Attachment fields
 
 Each attachment can include:
 
-- `filename` — the name shown to the recipient.
-- `content` — base64-encoded file content.
-- `path` — a URI for the attachment source when supported.
-- `content_type` — the MIME type, such as `application/pdf`.
-- `content_id` — an identifier for inline content referenced from HTML.
+- `filename` — required name shown to the recipient.
+- `content` — required Base64-encoded file content.
+- `content_type` — optional MIME type, such as `application/pdf`.
+- `content_id` — optional identifier for inline content referenced from HTML.
 
-`filename` is required for each attachment.
+<Warning>
+Attachment paths and remote URLs are not supported. Provide Base64 content directly in the request.
+</Warning>
 
 ## Example
 
@@ -34,6 +35,12 @@ Each attachment can include:
   ]
 }
 ```
+
+## Size limit
+
+The combined decoded size of all attachments in one email can be up to 7 MB. Dugble rejects requests that exceed this limit.
+
+Base64 increases the size of data on the wire, so account for the encoded payload size when building requests.
 
 ## Inline content
 
@@ -57,7 +64,7 @@ The corresponding attachment uses the same identifier:
 ## Batch sending
 
 <Warning>
-Attachments are not supported by the email batch endpoint. Send messages with attachments individually using `POST /emails`.
+Attachments are not supported by `POST /emails/batch`. Send messages with attachments individually using `POST /emails`.
 </Warning>
 
 For independent messages without attachments, see [Batch Sending](/emails/batch-sending).
