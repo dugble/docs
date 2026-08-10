@@ -3,19 +3,19 @@ title: "SMS overview"
 description: "Send, schedule, and track SMS messages with Dugble"
 ---
 
-Dugble provides one API for sending application-to-person SMS messages. A send request validates the destination and sender ID, calculates its segment count, and queues delivery atomically.
+Dugble provides one API for sending application-to-person SMS messages. Each send validates the destination and sender ID, calculates the message segment count, and queues delivery atomically.
 
 ## Before you send
 
 You need:
 
 - A Dugble team and a team token with the `sms:send` permission
-- An approved sender ID for the `from` value
-- A supported destination number in E.164 format
+- An approved sender ID for the destination country
+- A supported recipient number in E.164 format
+- A non-empty message body
 
 <Note>
-    Keep team tokens on your server. Never expose a team token in browser or
-    mobile application code.
+Keep team tokens on your server. Never expose them in browser or mobile application code.
 </Note>
 
 ## Send an SMS
@@ -23,16 +23,13 @@ You need:
 ```bash
 curl --request POST \
   --url https://api.dugble.com/sms \
-  --header "Authorization: Bearer $DUGBLE_TOKEN" \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
   --header "Content-Type: application/json" \
-  --header "Idempotency-Key: <unique-request-key>" \
+  --header "Idempotency-Key: verification-user-42" \
   --data '{
     "to": "+233201234567",
     "from": "Dugble",
     "body": "Your verification code is 123456.",
-    "tags": [
-      { "name": "category", "value": "verification" }
-    ],
     "metadata": {
       "user_id": "user_42"
     }
@@ -43,51 +40,50 @@ A successful request returns `202 Accepted`:
 
 ```json
 {
-    "success": true,
-    "data": {
-        "object": "sms",
-        "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794"
-    }
+  "success": true,
+  "data": {
+    "object": "sms",
+    "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794"
+  }
 }
 ```
 
-The ID belongs to Dugble. Store it with your application record so you can retrieve the message later.
+Store the Dugble message ID with your application record so you can retrieve the latest delivery state later.
 
 ## Recipient and content rules
 
-- `to` must be an E.164 number such as `+233201234567`.
+- `to` must be a supported E.164 number such as `+233201234567`.
 - `from` must match an approved sender ID and can be at most 11 characters.
 - `body` is required and can contain up to 1,600 Unicode characters.
-- Tag names and values may contain letters, numbers, underscores, and dashes and can be up to 256 characters.
-- `metadata` must be valid JSON.
+- `metadata` is optional and must be valid JSON.
 
 ## Message segments
 
-Dugble calculates the encoding units and segment count for each message. The retrieve response includes the resulting `segments` value.
+Dugble determines whether the message uses GSM-7 or UCS-2 encoding and calculates the number of SMS segments required. The retrieve response includes the resulting `segments` value.
+
+Longer messages may use multiple billable segments even though they are submitted through one API request.
 
 ## Track a message
 
 ```bash
 curl --request GET \
   --url https://api.dugble.com/sms/49a3999c-0ce1-4ea6-ab68-afcd6dc2e794 \
-  --header "Authorization: Bearer $DUGBLE_TOKEN"
+  --header "Authorization: Bearer $DUGBLE_API_KEY"
 ```
 
+The `last_event` field contains the latest normalized delivery state.
+
 <CardGroup cols={2}>
-    <Card title="Sender IDs" icon="signature" href="/sms/sender-ids">
-        Understand sender approval and country-specific identity.
-    </Card>
-    <Card title="Schedule SMS" icon="clock" href="/sms/schedule-sms">
-        Send later, reschedule, or cancel a queued SMS.
-    </Card>
-    <Card title="Batch sending" icon="layer-group" href="/sms/batch-sending">
-        Atomically queue up to 100 messages.
-    </Card>
-    <Card
-        title="Delivery status"
-        icon="signal-bars"
-        href="/sms/delivery-status"
-    >
-        Interpret message states and refresh provider status.
-    </Card>
+  <Card title="Sending SMS" icon="message" href="/sms/sending-sms">
+    Learn the request fields and recommended sending workflow.
+  </Card>
+  <Card title="Sender IDs" icon="signature" href="/sms/sender-ids">
+    Understand sender approval and country-specific identity.
+  </Card>
+  <Card title="Schedule SMS" icon="clock" href="/sms/schedule-sms">
+    Send later, reschedule, or cancel a scheduled SMS.
+  </Card>
+  <Card title="Delivery status" icon="signal-bars" href="/sms/delivery-status">
+    Interpret normalized delivery states and failures.
+  </Card>
 </CardGroup>
