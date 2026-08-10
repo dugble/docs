@@ -58,6 +58,38 @@
             ]
           },
           {
+            "group": "Contacts",
+            "pages": [
+              "contacts/introduction",
+              "contacts/managing-contacts",
+              "contacts/properties-and-consent",
+              "contacts/subscriptions"
+            ]
+          },
+          {
+            "group": "Topics",
+            "pages": [
+              "topics/introduction",
+              "topics/managing-topics"
+            ]
+          },
+          {
+            "group": "Segments",
+            "pages": [
+              "segments/introduction",
+              "segments/managing-segments",
+              "segments/managing-membership"
+            ]
+          },
+          {
+            "group": "Suppressions",
+            "pages": [
+              "suppressions/introduction",
+              "suppressions/managing-suppressions",
+              "suppressions/batch-operations"
+            ]
+          },
+          {
             "group": "Webhooks",
             "pages": [
               "webhooks/introduction",
