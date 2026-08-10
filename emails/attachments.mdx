@@ -1,0 +1,63 @@
+---
+title: Attachments
+description: Add file attachments and inline assets to emails sent with Dugble.
+---
+
+Dugble supports attachments on individual email sends. Attachments can be provided as encoded content or referenced by a path supported by the email delivery layer.
+
+## Attachment fields
+
+Each attachment can include:
+
+- `filename` — the name shown to the recipient.
+- `content` — base64-encoded file content.
+- `path` — a URI for the attachment source when supported.
+- `content_type` — the MIME type, such as `application/pdf`.
+- `content_id` — an identifier for inline content referenced from HTML.
+
+`filename` is required for each attachment.
+
+## Example
+
+```json
+{
+  "from": "Dugble <notifications@example.com>",
+  "to": "ada@example.com",
+  "subject": "Your invoice",
+  "html": "<p>Your invoice is attached.</p>",
+  "attachments": [
+    {
+      "filename": "invoice.pdf",
+      "content": "JVBERi0xLjQK...",
+      "content_type": "application/pdf"
+    }
+  ]
+}
+```
+
+## Inline content
+
+Use `content_id` when an attachment should be referenced inside the HTML body, for example for an embedded image.
+
+```html
+<img src="cid:company-logo" alt="Company logo" />
+```
+
+The corresponding attachment uses the same identifier:
+
+```json
+{
+  "filename": "logo.png",
+  "content": "iVBORw0KGgo...",
+  "content_type": "image/png",
+  "content_id": "company-logo"
+}
+```
+
+## Batch sending
+
+<Warning>
+Attachments are not supported by the email batch endpoint. Send messages with attachments individually using `POST /emails`.
+</Warning>
+
+For independent messages without attachments, see [Batch Sending](/emails/batch-sending).
