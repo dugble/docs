@@ -1,0 +1,54 @@
+---
+title: Managing Segment Membership
+description: Add contacts to segments, remove them, and inspect segment audiences.
+---
+
+Segment membership is managed explicitly through contact-segment operations.
+
+## Add a contact
+
+```bash
+curl --request POST \
+  --url https://api.dugble.com/contacts/$CONTACT_ID/segments/$SEGMENT_ID \
+  --header "Authorization: Bearer $DUGBLE_API_KEY"
+```
+
+If the contact is not yet a member, Dugble creates the membership. If the membership already exists, the API returns the existing membership instead of creating a duplicate.
+
+## Remove a contact
+
+```bash
+curl --request DELETE \
+  --url https://api.dugble.com/contacts/$CONTACT_ID/segments/$SEGMENT_ID \
+  --header "Authorization: Bearer $DUGBLE_API_KEY"
+```
+
+A successful removal returns `204 No Content`.
+
+## List a contact's segments
+
+```http
+GET /contacts/{contact_id}/segments
+```
+
+Membership records include the segment ID, name, creation time, and the time the contact was assigned.
+
+## List contacts in a segment
+
+```http
+GET /segments/{segment_id}/contacts?limit=50&offset=0
+```
+
+Use this endpoint when you need to inspect the current members of a segment.
+
+## Delete a segment
+
+```http
+DELETE /segments/{segment_id}
+```
+
+Deleting a segment removes the audience grouping itself. It does not delete the contact profiles that belonged to the segment.
+
+<Note>
+Segments represent explicit grouping. They do not automatically infer membership from contact properties or topic subscriptions.
+</Note>
