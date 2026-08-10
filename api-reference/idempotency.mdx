@@ -1,5 +1,77 @@
 ---
 title: Idempotency
+description: Safely retry Dugble API mutation requests without duplicating work.
 ---
 
-Placeholder: Idempotency behavior and guidelines.
+Use the `Idempotency-Key` header on mutation requests when you may need to retry the same operation.
+
+```http
+Idempotency-Key: welcome-user-42
+```
+
+Dugble applies idempotency to `POST`, `PUT`, `PATCH`, and `DELETE` requests when a key is present.
+
+## Key rules
+
+- Keys are trimmed before use.
+- A key must not be empty.
+- A key can contain at most 256 Unicode characters.
+- Reuse the same key only for the same logical request.
+
+## What gets matched
+
+Dugble binds an idempotency key to the authenticated credential scope and request fingerprint. The request fingerprint includes the HTTP method, route path, query string, and request body.
+
+If the same key is reused with a different request, Dugble returns `409 CONFLICT`.
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CONFLICT",
+    "message": "Idempotency-Key was already used with a different request"
+  }
+}
+```
+
+## Replayed responses
+
+When the original request completed successfully, a later request with the same idempotency key and identical request fingerprint receives the stored response instead of executing the operation again.
+
+Dugble stores idempotency records for 24 hours by default.
+
+## Requests still processing
+
+A request holds a processing lock while it is running. The default lock window is 30 seconds.
+
+If another request with the same key arrives while the first is still processing, Dugble returns `409 CONFLICT`.
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CONFLICT",
+    "message": "Idempotency-Key request is still processing"
+  }
+}
+```
+
+If a processing record outlives its lock without completing, Dugble asks the client to retry and returns a conflict response indicating that the previous processing attempt expired.
+
+## Recommended pattern
+
+Generate one stable idempotency key per logical mutation and keep using that key for every retry of the same request.
+
+```bash
+curl -X POST https://api.dugble.com/emails \
+  -H "Authorization: Bearer $DUGBLE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: order-38472-receipt" \
+  -d '{
+    "to": "ada@example.com",
+    "subject": "Your receipt",
+    "text": "Thanks for your order."
+  }'
+```
+
+Do not generate a new key for each retry, because a new key represents a new operation.
