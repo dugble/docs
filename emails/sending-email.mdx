@@ -15,9 +15,9 @@ curl -X POST https://api.dugble.com/emails \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: welcome-user-42" \
   -d '{
-    "from": "Dugble <notifications@example.com>",
+    "from": "Acme <onboarding@dugble.me>",
     "to": "ada@example.com",
-    "subject": "Welcome to Dugble",
+    "subject": "Welcome to Acme",
     "html": "<h1>Welcome!</h1><p>Your account is ready.</p>"
   }'
 ```
@@ -26,16 +26,16 @@ A successful send request returns `202 Accepted`. This means Dugble accepted the
 
 ## Message content
 
-Every email needs at least one `to` recipient and a subject. Include at least one of `html` or `text` for the body.
+Every email needs a `from` sender, at least one `to` recipient, and a subject. Include at least one of `html` or `text` for the body.
 
 You can also provide `cc`, `bcc`, `reply_to`, custom headers, attachments, tags, metadata, and a future `scheduled_at` value.
 
 ## Sender address
 
-The `from` value can be an email address or a display name with an email address, such as:
+The `from` value is required and can be an email address or a display name with an email address, such as:
 
 ```text
-Dugble <notifications@example.com>
+Acme <onboarding@dugble.me>
 ```
 
 Use a sender address on a domain that has been configured and verified for sending.

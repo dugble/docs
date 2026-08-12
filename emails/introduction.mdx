@@ -10,7 +10,8 @@ Dugble gives your application one API for sending transactional email. Send requ
 You need:
 
 - A Dugble team and a team token with the `email:send` permission
-- A verified sender domain or a configured default sender
+- A verified sender domain
+- A `from` sender address
 - At least one `to` recipient
 - A subject
 - An HTML body, a plain-text body, or both
@@ -28,9 +29,9 @@ curl --request POST \
   --header "Content-Type: application/json" \
   --header "Idempotency-Key: welcome-user-42" \
   --data '{
-    "from": "Dugble <notifications@example.com>",
+    "from": "Acme <onboarding@dugble.me>",
     "to": "Ada Lovelace <ada@example.com>",
-    "subject": "Welcome to Dugble",
+    "subject": "Welcome to Acme",
     "html": "<h1>Welcome!</h1><p>Your account is ready.</p>",
     "text": "Welcome! Your account is ready.",
     "tags": [
@@ -55,10 +56,11 @@ A successful request returns `202 Accepted` with the Dugble message ID:
 
 ## Address formats
 
-The `from`, `to`, `cc`, `bcc`, and `reply_to` fields accept friendly-name strings:
+The required `from` field and the `to`, `cc`, `bcc`, and `reply_to` fields accept friendly-name strings:
 
 ```json
 {
+  "from": "Acme <onboarding@dugble.me>",
   "to": "Ada Lovelace <ada@example.com>"
 }
 ```
@@ -67,6 +69,10 @@ They also accept structured objects:
 
 ```json
 {
+  "from": {
+    "email": "onboarding@dugble.me",
+    "name": "Acme"
+  },
   "to": {
     "email": "ada@example.com",
     "name": "Ada Lovelace"

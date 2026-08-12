@@ -63,9 +63,9 @@
             "application/json": {
               "schema": { "$ref": "#/components/schemas/EmailSendRequest" },
               "example": {
-                "from": "Dugble <notifications@example.com>",
+                "from": "Acme <onboarding@dugble.me>",
                 "to": "ada@example.com",
-                "subject": "Welcome to Dugble",
+                "subject": "Welcome to Acme",
                 "html": "<h1>Welcome!</h1><p>Your account is ready.</p>"
               }
             }
@@ -1575,9 +1575,12 @@
       },
       "EmailSendRequest": {
         "type": "object",
-        "required": ["to", "subject"],
+        "required": ["from", "to", "subject"],
         "properties": {
-          "from": { "$ref": "#/components/schemas/EmailAddress" },
+          "from": {
+            "$ref": "#/components/schemas/EmailAddress",
+            "default": "Acme <onboarding@dugble.me>"
+          },
           "to": { "$ref": "#/components/schemas/EmailAddressOrList" },
           "cc": { "$ref": "#/components/schemas/EmailAddressOrList" },
           "bcc": { "$ref": "#/components/schemas/EmailAddressOrList" },
