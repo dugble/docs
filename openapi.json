@@ -280,7 +280,7 @@
         "parameters": [{ "$ref": "#/components/parameters/MessageId" }],
         "responses": {
           "200": {
-            "description": "SMS message retrieved successfully.",
+            "description": "SMS retrieved successfully.",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SmsEnvelope" } } }
           },
           "default": { "$ref": "#/components/responses/Error" }
@@ -1742,7 +1742,7 @@
       "SmsListEnvelope": {
         "type": "object",
         "required": ["success", "data"],
-        "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SmsResource" } }
+        "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SmsResource" } } }
       },
       "VerificationRecord": {
         "type": "object",
@@ -2149,7 +2149,7 @@
       "SuppressionListEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SuppressionList" } } },
       "SuppressionBatchAdd": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/MutationResponse" } } } },
       "SuppressionBatchAddEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SuppressionBatchAdd" } } },
-      "SuppressionBatchRemove": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeleteResponse" } } },
+      "SuppressionBatchRemove": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeleteResponse" } } } },
       "SuppressionBatchRemoveEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SuppressionBatchRemove" } } },
       "BroadcastCreateRequest": {
         "type": "object",
