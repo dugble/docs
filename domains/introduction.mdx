@@ -21,7 +21,7 @@ It also gives you the foundation for publishing a DMARC policy for your visible 
     Use a domain or subdomain you control. A dedicated subdomain such as `mail.example.com` can separate transactional sending from other mail streams.
   </Step>
   <Step title="Create the domain in Dugble">
-    Add the domain to your team and choose a supported sending region. Dugble currently supports `us-east-1` and `eu-north-1`.
+    Add the domain to your team and choose a supported sending region. Dugble currently supports `us-east-1` and `eu-north-1`. You can optionally set `tls` to `opportunistic` or `enforced`; when omitted, it defaults to `opportunistic`.
   </Step>
   <Step title="Publish the DNS records">
     Add every verification record returned by Dugble at your DNS provider. Copy host names and values exactly.
@@ -30,6 +30,20 @@ It also gives you the foundation for publishing a DMARC policy for your visible 
     After DNS changes propagate, run domain verification again. Do not send from the domain until its status is `verified`.
   </Step>
 </Steps>
+
+The supported sender-domain configuration is intentionally small:
+
+```json
+{
+  "name": "mail.example.com",
+  "region": "eu-north-1",
+  "tls": "enforced"
+}
+```
+
+Tracking settings, receiving capabilities, and custom return-path settings are not customer-configurable sender-domain fields. Unknown JSON fields are rejected by the API.
+
+See [Choosing a Region](/domains/regions) for the supported regions and TLS options.
 
 ## Provisioning
 
@@ -65,6 +79,9 @@ Use a dedicated sending subdomain when different systems or teams manage product
 <CardGroup cols={2}>
   <Card title="Verification" icon="badge-check" href="/domains/verification">
     Check the DNS records required to activate a sender domain.
+  </Card>
+  <Card title="Regions" icon="globe" href="/domains/regions">
+    Choose a supported sending region and TLS mode.
   </Card>
   <Card title="DKIM" icon="key" href="/domains/dkim">
     Learn how DKIM authenticates mail signed for your domain.

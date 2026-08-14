@@ -1,5 +1,41 @@
 ---
 title: "Choosing a Region"
 sidebarTitle: "Regions"
-description: "Learn about the regions where Dugble operates and how to manage your sender domains in those regions."
+description: "Choose a supported sending region and TLS mode for your Dugble sender domain."
 ---
+
+Sender domains are provisioned in a specific sending region. Choose the region when you create the domain; the region determines where Dugble provisions the underlying email sending infrastructure for that domain.
+
+## Supported regions
+
+Dugble currently supports these sender-domain regions:
+
+| Region | Location |
+| --- | --- |
+| `us-east-1` | US East (N. Virginia) |
+| `eu-north-1` | Europe (Stockholm) |
+
+Requests using another region are rejected as unsupported.
+
+## TLS mode
+
+When creating a sender domain, you can also set `tls` to one of:
+
+- `opportunistic` — the default when `tls` is omitted.
+- `enforced` — records an enforced TLS preference for the sender domain.
+
+```json
+{
+  "name": "mail.example.com",
+  "region": "eu-north-1",
+  "tls": "enforced"
+}
+```
+
+<Note>
+The domain API accepts only `name`, `region`, and optional `tls` as sender-domain configuration. Tracking options, receiving capabilities, and custom return-path configuration are not customer-configurable domain fields.
+</Note>
+
+<Tip>
+Choose the region closest to your operational requirements and keep the same region when recreating or transferring sender-domain infrastructure.
+</Tip>

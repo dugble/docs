@@ -393,8 +393,6 @@
               "example": {
                 "name": "mail.example.com",
                 "region": "us-east-1",
-                "open_tracking": true,
-                "click_tracking": false,
                 "tls": "opportunistic"
               }
             }
@@ -1757,25 +1755,15 @@
           "priority": { "type": "integer" }
         }
       },
-      "DomainCapabilities": {
-        "type": "object",
-        "required": ["sending", "receiving"],
-        "properties": { "sending": { "type": "boolean", "default": true }, "receiving": { "type": "boolean", "default": false, "description": "Receiving is not currently supported." } }
-      },
       "DomainCreateRequest": {
         "type": "object",
         "required": ["name", "region"],
         "properties": {
           "name": { "type": "string", "maxLength": 253 },
-          "domain": { "type": "string", "description": "Legacy alias for name when name is omitted." },
-          "region": { "type": "string" },
-          "custom_return_path": { "type": "string", "default": "send" },
-          "open_tracking": { "type": "boolean", "default": true },
-          "click_tracking": { "type": "boolean", "default": false },
-          "tracking_subdomain": { "type": "string" },
-          "tls": { "type": "string", "enum": ["opportunistic", "enforced"], "default": "opportunistic" },
-          "capabilities": { "$ref": "#/components/schemas/DomainCapabilities" }
-        }
+          "region": { "type": "string", "enum": ["us-east-1", "eu-north-1"] },
+          "tls": { "type": "string", "enum": ["opportunistic", "enforced"], "default": "opportunistic" }
+        },
+        "additionalProperties": false
       },
       "SenderDomain": {
         "type": "object",
@@ -1785,18 +1773,12 @@
           "name": { "type": "string" },
           "provider": { "type": "string" },
           "provider_account": { "type": "string" },
-          "region": { "type": "string" },
+          "region": { "type": "string", "enum": ["us-east-1", "eu-north-1"] },
           "provider_external_id": { "type": "string" },
           "status": { "type": "string", "enum": ["not_started", "pending", "verified", "partially_verified", "partially_failed", "failed", "temporary_failure", "disabled"] },
           "provider_status": { "type": "string" },
           "records": { "type": "array", "items": { "$ref": "#/components/schemas/VerificationRecord" } },
-          "open_tracking": { "type": "boolean" },
-          "click_tracking": { "type": "boolean" },
-          "tracking_subdomain": { "type": "string" },
-          "active_tracking_subdomain": { "type": "string" },
           "tls": { "type": "string", "enum": ["opportunistic", "enforced"] },
-          "capabilities": { "$ref": "#/components/schemas/DomainCapabilities" },
-          "custom_return_path": { "type": "string" },
           "failure_reason": { "type": "string" },
           "health_status": { "type": "string", "enum": ["unknown", "healthy", "degraded"] },
           "consecutive_health_failures": { "type": "integer", "format": "int32" },
