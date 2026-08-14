@@ -1,0 +1,95 @@
+from pathlib import Path
+import json
+
+path = Path("openapi.json")
+text = path.read_text()
+
+replacements = [
+    (
+        '''                "name": "mail.example.com",
+                "region": "us-east-1",
+                "open_tracking": true,
+                "click_tracking": false,
+                "tls": "opportunistic"''',
+        '''                "name": "mail.example.com",
+                "region": "us-east-1",
+                "tls": "opportunistic"''',
+    ),
+    (
+        '''      "DomainCapabilities": {
+        "type": "object",
+        "required": ["sending", "receiving"],
+        "properties": { "sending": { "type": "boolean", "default": true }, "receiving": { "type": "boolean", "default": false, "description": "Receiving is not currently supported." } }
+      },
+''',
+        "",
+    ),
+    (
+        '''      "DomainCreateRequest": {
+        "type": "object",
+        "required": ["name", "region"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 253 },
+          "domain": { "type": "string", "description": "Legacy alias for name when name is omitted." },
+          "region": { "type": "string" },
+          "custom_return_path": { "type": "string", "default": "send" },
+          "open_tracking": { "type": "boolean", "default": true },
+          "click_tracking": { "type": "boolean", "default": false },
+          "tracking_subdomain": { "type": "string" },
+          "tls": { "type": "string", "enum": ["opportunistic", "enforced"], "default": "opportunistic" },
+          "capabilities": { "$ref": "#/components/schemas/DomainCapabilities" }
+        }
+      },''',
+        '''      "DomainCreateRequest": {
+        "type": "object",
+        "required": ["name", "region"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 253 },
+          "region": { "type": "string", "enum": ["us-east-1", "eu-north-1"] },
+          "tls": { "type": "string", "enum": ["opportunistic", "enforced"], "default": "opportunistic" }
+        },
+        "additionalProperties": false
+      },''',
+    ),
+    (
+        '          "region": { "type": "string" },\n          "provider_external_id":',
+        '          "region": { "type": "string", "enum": ["us-east-1", "eu-north-1"] },\n          "provider_external_id":',
+    ),
+    ('          "open_tracking": { "type": "boolean" },\n', ""),
+    ('          "click_tracking": { "type": "boolean" },\n', ""),
+    ('          "tracking_subdomain": { "type": "string" },\n', ""),
+    ('          "active_tracking_subdomain": { "type": "string" },\n', ""),
+    ('          "capabilities": { "$ref": "#/components/schemas/DomainCapabilities" },\n', ""),
+    ('          "custom_return_path": { "type": "string" },\n', ""),
+]
+
+for old, new in replacements:
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"expected exactly one match, found {count}: {old[:80]!r}")
+    text = text.replace(old, new, 1)
+
+if not text.endswith("\n"):
+    text += "\n"
+
+parsed = json.loads(text)
+create = parsed["components"]["schemas"]["DomainCreateRequest"]
+domain = parsed["components"]["schemas"]["SenderDomain"]
+example = parsed["paths"]["/domains"]["post"]["requestBody"]["content"]["application/json"]["example"]
+
+assert set(create["properties"]) == {"name", "region", "tls"}
+assert create["additionalProperties"] is False
+assert create["properties"]["region"]["enum"] == ["us-east-1", "eu-north-1"]
+assert set(example) == {"name", "region", "tls"}
+for removed in (
+    "custom_return_path",
+    "open_tracking",
+    "click_tracking",
+    "tracking_subdomain",
+    "active_tracking_subdomain",
+    "capabilities",
+):
+    assert removed not in domain.get("properties", {})
+assert "DomainCapabilities" not in parsed["components"]["schemas"]
+
+path.write_text(text)
