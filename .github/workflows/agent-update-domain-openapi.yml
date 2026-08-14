@@ -1,7 +1,9 @@
 name: Agent Update Domain OpenAPI
 
 on:
-  pull_request:
+  push:
+    branches:
+      - agent/update-domain-docs
     paths:
       - ".github/workflows/agent-update-domain-openapi.yml"
 
@@ -10,13 +12,12 @@ permissions:
 
 jobs:
   update:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: agent/update-domain-docs
 
       - name: Update sender-domain OpenAPI contract
         run: |
@@ -74,7 +75,10 @@ jobs:
         "additionalProperties": false
       },''',
               ),
-              ('          "region": { "type": "string" },\n          "provider_external_id":', '          "region": { "type": "string", "enum": ["us-east-1", "eu-north-1"] },\n          "provider_external_id":'),
+              (
+                  '          "region": { "type": "string" },\n          "provider_external_id":',
+                  '          "region": { "type": "string", "enum": ["us-east-1", "eu-north-1"] },\n          "provider_external_id":',
+              ),
               ('          "open_tracking": { "type": "boolean" },\n', ''),
               ('          "click_tracking": { "type": "boolean" },\n', ''),
               ('          "tracking_subdomain": { "type": "string" },\n', ''),
@@ -92,10 +96,13 @@ jobs:
           parsed = json.loads(text)
           create = parsed["components"]["schemas"]["DomainCreateRequest"]
           domain = parsed["components"]["schemas"]["SenderDomain"]
+          example = parsed["paths"]["/domains"]["post"]["requestBody"]["content"]["application/json"]["example"]
+
           assert set(create["properties"]) == {"name", "region", "tls"}
           assert create["additionalProperties"] is False
           assert create["properties"]["region"]["enum"] == ["us-east-1", "eu-north-1"]
-          for removed in ("domain", "custom_return_path", "open_tracking", "click_tracking", "tracking_subdomain", "active_tracking_subdomain", "capabilities"):
+          assert set(example) == {"name", "region", "tls"}
+          for removed in ("custom_return_path", "open_tracking", "click_tracking", "tracking_subdomain", "active_tracking_subdomain", "capabilities"):
               assert removed not in domain.get("properties", {})
           assert "DomainCapabilities" not in parsed["components"]["schemas"]
 
@@ -109,5 +116,5 @@ jobs:
           git add openapi.json
           if ! git diff --cached --quiet; then
             git commit -m "update sender domain OpenAPI contract"
-            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+            git push origin HEAD:agent/update-domain-docs
           fi
