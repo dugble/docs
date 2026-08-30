@@ -146,6 +146,23 @@
             ]
           },
           {
+            "group": "Templates",
+            "pages": [
+              "POST /templates",
+              "GET /templates",
+              "GET /templates/{template}",
+              "PATCH /templates/{template}",
+              "DELETE /templates/{template}",
+              "POST /templates/{template}/publish",
+              "POST /templates/{template}/duplicate",
+              "GET /templates/{template}/versions",
+              "GET /templates/{template}/versions/{version_id}",
+              "POST /templates/{template}/versions/{version_id}/revert",
+              "POST /templates/{template}/preview",
+              "POST /templates/{template}/test-send"
+            ]
+          },
+          {
             "group": "Sender IDs",
             "pages": [
               "POST /sender-ids",
