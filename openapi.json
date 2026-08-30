@@ -432,6 +432,27 @@
           "default": { "$ref": "#/components/responses/Error" }
         }
       },
+      "patch": {
+        "operationId": "updateDomain",
+        "summary": "Update Domain",
+        "description": "Updates mutable configuration for a sending domain. Currently only the TLS mode can be changed.",
+        "tags": ["Domains"],
+        "parameters": [
+          { "$ref": "#/components/parameters/DomainId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain updated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
       "delete": {
         "operationId": "deleteDomain",
         "summary": "Delete Domain",
@@ -1170,7 +1191,7 @@
       "post": {
         "operationId": "createBroadcast",
         "summary": "Create Broadcast",
-        "description": "Creates a draft broadcast for a segment using a message template.",
+        "description": "Creates a broadcast with its own sender and email content. By default the broadcast is a draft; set send to true to queue immediately or combine send with a future scheduled_at to schedule it.",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -1181,7 +1202,13 @@
               "example": {
                 "name": "August product update",
                 "segment_id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
-                "template": "product-update"
+                "from_email": "hello@example.com",
+                "from_name": "Dugble",
+                "subject": "What's new this month",
+                "preview_text": "A quick look at what shipped.",
+                "html": "<p>Hello {{{FIRST_NAME}}}</p>",
+                "text": "Hello {{{FIRST_NAME}}}",
+                "variable_bindings": { "FIRST_NAME": "there" }
               }
             }
           }
@@ -1213,7 +1240,7 @@
       "patch": {
         "operationId": "updateBroadcast",
         "summary": "Update Broadcast",
-        "description": "Updates a draft broadcast. Supply the current revision for optimistic concurrency control.",
+        "description": "Updates a draft or scheduled broadcast. Supply the current revision for optimistic concurrency control; nullable content fields can be cleared with JSON null.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1276,7 +1303,7 @@
       "post": {
         "operationId": "cancelBroadcast",
         "summary": "Cancel Broadcast",
-        "description": "Cancels a broadcast that is currently scheduled for future delivery.",
+        "description": "Cancels active scheduling or execution. Scheduled broadcasts return to draft; queued broadcasts move to canceled and remaining fanout stops.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1295,7 +1322,7 @@
       "post": {
         "operationId": "duplicateBroadcast",
         "summary": "Duplicate Broadcast",
-        "description": "Creates a new draft broadcast using the configuration of an existing broadcast.",
+        "description": "Creates a new draft by copying the source broadcast audience and exact owned message content.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1318,7 +1345,7 @@
       "post": {
         "operationId": "previewBroadcast",
         "summary": "Preview Broadcast",
-        "description": "Renders the broadcast template with optional preview variables without sending it.",
+        "description": "Renders the broadcast-owned subject and body with optional preview variables without sending it.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1765,6 +1792,13 @@
         },
         "additionalProperties": false
       },
+      "DomainUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "tls": { "type": "string", "enum": ["opportunistic", "enforced"] }
+        },
+        "additionalProperties": false
+      },
       "SenderDomain": {
         "type": "object",
         "properties": {
@@ -2135,13 +2169,21 @@
       "SuppressionBatchRemoveEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SuppressionBatchRemove" } } },
       "BroadcastCreateRequest": {
         "type": "object",
-        "required": ["name", "segment_id", "template"],
+        "required": ["segment_id", "subject", "html"],
         "properties": {
-          "name": { "type": "string", "minLength": 1 },
+          "name": { "type": "string" },
           "segment_id": { "type": "string", "format": "uuid" },
-          "topic_id": { "type": "string", "format": "uuid" },
-          "template": { "type": "string", "description": "Template identifier accepted by the template service." },
-          "variable_bindings": { "type": "object", "additionalProperties": true }
+          "topic_id": { "type": ["string", "null"], "format": "uuid" },
+          "from_email": { "type": ["string", "null"], "format": "email" },
+          "from_name": { "type": ["string", "null"] },
+          "reply_to_email": { "type": ["string", "null"], "format": "email" },
+          "subject": { "type": "string" },
+          "preview_text": { "type": ["string", "null"] },
+          "html": { "type": "string" },
+          "text": { "type": ["string", "null"] },
+          "variable_bindings": { "type": "object", "additionalProperties": true },
+          "send": { "type": "boolean", "default": false },
+          "scheduled_at": { "type": ["string", "null"], "format": "date-time", "description": "When send is true, a future timestamp schedules delivery instead of queueing immediately." }
         }
       },
       "BroadcastUpdateRequest": {
@@ -2151,16 +2193,23 @@
           "revision": { "type": "integer", "format": "int64", "minimum": 1 },
           "name": { "type": "string" },
           "segment_id": { "type": "string", "format": "uuid" },
-          "topic_id": { "type": "string", "format": "uuid" },
-          "template": { "type": "string" },
-          "variable_bindings": { "type": "object", "additionalProperties": true }
+          "topic_id": { "type": ["string", "null"], "format": "uuid" },
+          "from_email": { "type": ["string", "null"], "format": "email" },
+          "from_name": { "type": ["string", "null"] },
+          "reply_to_email": { "type": ["string", "null"], "format": "email" },
+          "subject": { "type": "string" },
+          "preview_text": { "type": ["string", "null"] },
+          "html": { "type": "string" },
+          "text": { "type": ["string", "null"] },
+          "variable_bindings": { "type": ["object", "null"], "additionalProperties": true }
         }
       },
       "BroadcastSendRequest": { "type": "object", "properties": { "scheduled_at": { "type": "string", "format": "date-time", "description": "Must be in the future." } } },
-      "BroadcastDuplicateRequest": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string", "minLength": 1 } } },
+      "BroadcastDuplicateRequest": { "type": "object", "properties": { "name": { "type": "string" } } },
       "BroadcastPreviewRequest": { "type": "object", "properties": { "variables": { "type": "object", "additionalProperties": true } } },
       "BroadcastResource": {
         "type": "object",
+        "required": ["id", "team_id", "name", "status", "segment_id", "from_email", "subject", "html", "variable_bindings", "audience_count", "eligible_count", "suppressed_count", "queued_count", "failed_count", "revision", "created_at", "updated_at"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "team_id": { "type": "string", "format": "uuid" },
@@ -2168,8 +2217,13 @@
           "status": { "type": "string", "enum": ["draft", "scheduled", "queued", "sent", "failed", "canceled"] },
           "segment_id": { "type": "string", "format": "uuid" },
           "topic_id": { "type": "string", "format": "uuid" },
-          "template_id": { "type": "string", "format": "uuid" },
-          "template_version_id": { "type": "string", "format": "uuid" },
+          "from_email": { "type": "string", "format": "email" },
+          "from_name": { "type": "string" },
+          "reply_to_email": { "type": "string", "format": "email" },
+          "subject": { "type": "string" },
+          "preview_text": { "type": "string" },
+          "html": { "type": "string" },
+          "text": { "type": "string" },
           "variable_bindings": { "type": "object", "additionalProperties": true },
           "scheduled_at": { "type": "string", "format": "date-time" },
           "queued_at": { "type": "string", "format": "date-time" },
@@ -2180,7 +2234,7 @@
           "suppressed_count": { "type": "integer", "format": "int64" },
           "queued_count": { "type": "integer", "format": "int64" },
           "failed_count": { "type": "integer", "format": "int64" },
-          "revision": { "type": "integer", "format": "int64" },
+          "revision": { "type": "integer", "format": "int64", "minimum": 1 },
           "created_at": { "type": "string", "format": "date-time" },
           "updated_at": { "type": "string", "format": "date-time" }
         }
@@ -2231,15 +2285,15 @@
       },
       "BroadcastPreview": {
         "type": "object",
+        "required": ["from_email", "subject", "html"],
         "properties": {
-          "template_id": { "type": "string", "format": "uuid" },
-          "version_id": { "type": "string", "format": "uuid" },
-          "subject": { "type": "string" },
-          "html": { "type": "string" },
-          "text": { "type": "string" },
           "from_email": { "type": "string", "format": "email" },
           "from_name": { "type": "string" },
-          "reply_to": { "type": "string" }
+          "reply_to_email": { "type": "string", "format": "email" },
+          "subject": { "type": "string" },
+          "preview_text": { "type": "string" },
+          "html": { "type": "string" },
+          "text": { "type": "string" }
         }
       },
       "BroadcastEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastResource" } } },
