@@ -21,7 +21,10 @@ jobs:
           python-version: '3.12'
       - name: Update and validate OpenAPI
         run: |
-          python scripts/sync_messaging_openapi.py
+          if ! python scripts/sync_messaging_openapi.py; then
+            nl -ba openapi.json | sed -n '2088,2098p'
+            exit 1
+          fi
           python -m json.tool openapi.json >/dev/null
       - name: Commit generated OpenAPI
         run: |
