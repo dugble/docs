@@ -43,15 +43,21 @@ The supported sender-domain configuration is intentionally small:
 
 Tracking settings, receiving capabilities, and custom return-path settings are not customer-configurable sender-domain fields. Unknown JSON fields are rejected by the API.
 
+## List sender domains
+
+`GET /domains` uses `limit` and `offset` pagination and returns a plain array inside the standard success envelope.
+
+- `limit` defaults to `50` when omitted, non-positive, or greater than `100`.
+- `offset` defaults to `0`, and negative values are treated as `0`.
+- Malformed integer values for `limit` or `offset` return `400 Bad Request`.
+
+The response does not include `has_more`, so clients that need to enumerate all domains should advance `offset` by the number of records returned and stop when a page contains fewer than the requested effective limit.
+
 ## Update a sender domain
 
 Use `PATCH /domains/{domain_id}` to change mutable sender-domain configuration. The current backend exposes domain updates through the same sender-domain create permission used for provisioning and verification.
 
 Only fields supported by the public update request should be sent. Provider internals and persistence-only fields are not customer-configurable.
-
-<Note>
-The API reference will be updated in this documentation sync to expose the PATCH operation alongside create, retrieve, verify, and delete.
-</Note>
 
 See [Choosing a Region](/domains/regions) for the supported regions and TLS options.
 
