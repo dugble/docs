@@ -32,7 +32,8 @@
               "emails/schedule-email",
               "emails/batch-sending",
               "emails/delivery-status",
-              "emails/events"
+              "emails/events",
+              "emails/analytics"
             ]
           },
           {
@@ -44,7 +45,8 @@
               "sms/schedule-sms",
               "sms/batch-sending",
               "sms/delivery-status",
-              "sms/events"
+              "sms/events",
+              "sms/analytics"
             ]
           },
           {
@@ -56,6 +58,12 @@
               "domains/dkim",
               "domains/spf",
               "domains/dmarc"
+            ]
+          },
+          {
+            "group": "Templates",
+            "pages": [
+              "templates/introduction"
             ]
           },
           {
@@ -109,6 +117,7 @@
               "POST /emails",
               "POST /emails/batch",
               "GET /emails",
+              "GET /emails/analytics",
               "GET /emails/{message_id}",
               "PATCH /emails/{message_id}",
               "POST /emails/{message_id}/cancel",
@@ -121,6 +130,7 @@
               "POST /sms",
               "POST /sms/batch",
               "GET /sms",
+              "GET /sms/analytics",
               "GET /sms/{message_id}",
               "PATCH /sms/{message_id}",
               "POST /sms/{message_id}/cancel",
@@ -134,8 +144,26 @@
               "POST /domains",
               "GET /domains",
               "GET /domains/{domain_id}",
+              "PATCH /domains/{domain_id}",
               "POST /domains/{domain_id}/verify",
               "DELETE /domains/{domain_id}"
+            ]
+          },
+          {
+            "group": "Templates",
+            "pages": [
+              "POST /templates",
+              "GET /templates",
+              "GET /templates/{template}",
+              "PATCH /templates/{template}",
+              "DELETE /templates/{template}",
+              "POST /templates/{template}/publish",
+              "POST /templates/{template}/duplicate",
+              "GET /templates/{template}/versions",
+              "GET /templates/{template}/versions/{version_id}",
+              "POST /templates/{template}/versions/{version_id}/revert",
+              "POST /templates/{template}/preview",
+              "POST /templates/{template}/test-send"
             ]
           },
           {
@@ -188,6 +216,7 @@
               "POST /segments",
               "GET /segments",
               "GET /segments/{segment_id}",
+              "GET /segments/{segment_id}/audience-size",
               "GET /segments/{segment_id}/contacts",
               "DELETE /segments/{segment_id}"
             ]

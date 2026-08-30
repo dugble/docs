@@ -34,4 +34,17 @@ A contact can be in a segment and still be opted out of the relevant topic. That
 
 A topic's name, description, and visibility can change over time. Its `default_subscription` is part of the topic's preference model and should be chosen deliberately when the topic is created.
 
+## Pagination
+
+`GET /topics` uses `limit` and `offset` pagination. It does not use cursor parameters such as `after` or `before`.
+
+- `limit` defaults to `50` when omitted or non-positive.
+- A `limit` greater than `100` resets to the default `50` rather than being clamped to `100`.
+- `offset` defaults to `0`, and negative values are treated as `0`.
+- Malformed integer values for `limit` or `offset` return `400 Bad Request`.
+
+The list response includes `object: "list"`, a `data` array, and `has_more`. The server fetches one extra record internally to determine `has_more` without exposing that lookahead record in the page.
+
+To walk the list, increase `offset` by the number of records returned and continue while `has_more` is `true`.
+
 For endpoint details, request fields, and responses, see the Topics section in the API Reference.

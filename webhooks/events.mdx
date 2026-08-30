@@ -1,125 +1,112 @@
 ---
 title: "Webhook events"
-description: "Understand the outgoing Email, SMS, and Verify lifecycle event catalog"
+description: "Understand the current Email, SMS, contact, suppression, and broadcast webhook event catalog"
 ---
 
 <Warning>
-    Outgoing webhooks are currently a preview. The catalog below is the
-    complete set of events that endpoints can subscribe to during the preview.
+    Customer-configurable outgoing webhooks are currently a preview. The
+    subscribable event types below mirror the backend's canonical event catalog.
 </Warning>
 
-Event types use a resource and lifecycle name, such as `email.delivered`,
-`sms.delivered`, or `verification.approved`.
+Webhook event types use a resource and lifecycle name such as `email.delivered`,
+`contact.updated`, or `broadcast.sent`.
 
 ## Common envelope
 
-The envelope includes a UUID event ID, an event type, the time the lifecycle
-transition occurred, and a snapshot of the affected resource:
+Webhook deliveries use the canonical versioned event envelope:
 
 ```json
 {
     "id": "7fccf29e-d21e-4bc9-85a3-a4ec9c35a8dd",
     "type": "email.bounced",
-    "occurred_at": "2026-07-31T12:01:10Z",
+    "version": "1",
+    "team_id": "f84afc84-824b-441d-a75c-0d3245727e80",
+    "object_type": "email",
+    "object_id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
     "data": {
-        "object": "email",
-        "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
         "status": "partially_failed",
         "provider": "ses",
-        "provider_event_id": "769af168-5a9d-5b30-a35f-4857f81fbf02",
-        "provider_message_id": "0100018f-example",
-        "last_event": "bounce",
-        "recipients": ["recipient@example.com"],
-        "recipient_details": [
-            {
-                "email": "recipient@example.com",
-                "status": "bounced",
-                "action": "failed",
-                "status_code": "5.1.1",
-                "diagnostic_code": "smtp; 550 user unknown"
-            }
-        ],
-        "diagnostics": {
-            "bounce_type": "Permanent",
-            "bounce_sub_type": "General",
-            "reporting_mta": "dsn; mx.example.com",
-            "remote_mta_ip_address": "192.0.2.10"
-        }
-    }
+        "last_event": "bounce"
+    },
+    "occurred_at": "2026-08-30T11:00:00Z"
 }
 ```
 
-Treat unknown fields and event types as forward-compatible additions. Do not fail an entire endpoint because it receives an event your application does not use.
+`version` is currently `"1"`. `object_type` is fixed by the event type, and all
+currently subscribable events require an `object_id`. The `data` object contains
+the resource-specific event payload.
+
+Treat unknown fields and future event types as forward-compatible additions. Do
+not fail an entire endpoint because it receives data your application does not
+use.
+
+## Subscribing to events
+
+A webhook endpoint must subscribe to at least one supported event. Empty values
+and duplicate event names are removed during validation. An unsupported event
+name causes the endpoint create or update request to fail with `400 Bad Request`.
+
+`webhook.test` is not a subscribable event. It is generated only when you test a
+specific endpoint.
 
 ## SMS events
 
-| Event             | Meaning                                      | Suggested action                                            |
-| ----------------- | -------------------------------------------- | ----------------------------------------------------------- |
-| `sms.submitted`   | The provider accepted the SMS.               | Mark the message submitted.                                 |
-| `sms.sent`        | The provider reported that the SMS was sent. | Continue waiting for final delivery when supported.         |
-| `sms.delivered`   | The provider reported delivery.              | Mark the notification delivered.                            |
-| `sms.undelivered` | The provider could not deliver the SMS.      | Verify the destination number before retrying.              |
-| `sms.failed`      | Dugble could not complete delivery.          | Record the failure for operational review.                  |
+| Event | Meaning | Suggested action |
+| --- | --- | --- |
+| `sms.submitted` | The provider accepted the SMS for delivery. | Mark the message submitted. |
+| `sms.sent` | The provider reported that the SMS was sent. | Continue waiting for final delivery when supported. |
+| `sms.delivered` | The provider reported successful delivery. | Mark the notification delivered. |
+| `sms.undelivered` | The provider could not deliver the SMS. | Verify the destination before retrying. |
+| `sms.failed` | Dugble could not complete SMS delivery. | Record the failure for operational review. |
 
 ## Email events
 
-| Event                                | Meaning                                                   | Suggested action                                      |
-| ------------------------------------ | --------------------------------------------------------- | ----------------------------------------------------- |
-| `email.submitted`                    | SES accepted the email for delivery.                      | Mark the message submitted and await final outcomes.  |
-| `email.delivered`                    | SES delivered the email to the listed recipients.         | Mark those recipients delivered.                      |
-| `email.delayed`                      | SES reported a temporary delivery delay.                  | Keep waiting or surface a delayed state.              |
-| `email.bounced`                      | SES reported a bounce for the listed recipients.          | Suppress permanent failures before retrying.          |
-| `email.complained`                   | A recipient reported the email as spam.                   | Suppress the recipient and investigate the campaign.  |
-| `email.rejected`                     | SES rejected the email before delivery.                   | Correct the message or sender configuration.          |
-| `email.failed`                       | SES could not render or otherwise send the email.         | Record the failure for operational review.            |
-| `email.opened`                       | SES recorded an open-tracking event.                      | Update engagement analytics without changing delivery.|
-| `email.clicked`                      | SES recorded a tracked-link click.                        | Update engagement analytics and campaign attribution. |
-| `email.subscription_changed`         | SES recorded a contact-list subscription preference change.| Synchronize the recipient's subscription preferences. |
+| Event | Meaning | Suggested action |
+| --- | --- | --- |
+| `email.submitted` | The email was submitted for provider delivery. | Mark the message submitted and await final outcomes. |
+| `email.delivered` | The provider reported successful delivery. | Mark the affected recipients delivered. |
+| `email.delayed` | The provider reported a temporary delivery delay. | Keep waiting or surface a delayed state. |
+| `email.bounced` | The provider reported a bounce. | Suppress permanent failures before retrying. |
+| `email.complained` | A recipient reported the email as spam. | Suppress the recipient and investigate the send. |
+| `email.rejected` | The provider rejected the email before delivery. | Correct the message or sender configuration. |
+| `email.failed` | Dugble could not render or otherwise send the email. | Record the failure for operational review. |
+| `email.opened` | An open-tracking event was recorded. | Update engagement analytics without changing delivery state. |
+| `email.clicked` | A tracked-link click was recorded. | Update engagement analytics and attribution. |
+| `email.subscription_changed` | A contact-list subscription preference changed. | Synchronize the recipient's subscription preferences. |
 
-Email events include the affected recipient list from the provider event. A single
-email can therefore produce different lifecycle events for different recipients.
+Email event payloads may include recipient-level state and provider diagnostics.
+Engagement and subscription events do not imply a delivery-state transition.
 
-The `status` field is the current aggregate email status after applying the provider
-event. Engagement and subscription events do not change delivery status.
-`provider_event_id` identifies the durable normalized provider event that caused
-the webhook.
+## Contact events
 
-`diagnostics` contains event-level SES details when available, including:
+| Event | Meaning | Suggested action |
+| --- | --- | --- |
+| `contact.created` | A contact was created. | Create or refresh the contact in downstream systems. |
+| `contact.updated` | A contact's profile or messaging state changed. | Refresh the stored contact representation. |
+| `contact.deleted` | A contact was deleted. | Remove or tombstone the corresponding downstream contact. |
 
-- bounce type and subtype
-- complaint feedback type, feedback ID, and user agent
-- delivery SMTP response, reporting MTA, remote MTA IP, and processing time
-- delivery-delay type and expiration time
-- rejection or rendering-failure reason
-- open and click IP address and user agent
-- clicked URL and link tags
-- contact-list subscription source and old/new topic preferences
+## Suppression events
 
-`recipient_details` contains the current state for each affected recipient. Bounce
-and delay events can include SMTP `action`, enhanced status code, and diagnostic
-text. Fields that SES did not provide are omitted.
+| Event | Meaning | Suggested action |
+| --- | --- | --- |
+| `suppression.created` | A suppression was added. | Stop sending affected email until the suppression is removed. |
+| `suppression.deleted` | A suppression was removed. | Re-evaluate the address under your normal eligibility rules. |
 
-## Verify events
+## Broadcast events
 
-| Event                               | Meaning                                                  | Suggested action                                       |
-| ----------------------------------- | -------------------------------------------------------- | ------------------------------------------------------ |
-| `verification.created`              | A verification and its first challenge were created.    | Store the verification ID and wait for user input.     |
-| `verification.dispatched`           | The challenge was handed to Email or SMS delivery.       | Surface that the code was sent.                        |
-| `verification.approved`             | The submitted code matched the active challenge.         | Complete the protected action exactly once.            |
-| `verification.incorrect`            | A submitted code did not match.                          | Keep the session pending unless attempts are exhausted.|
-| `verification.resent`               | A new challenge replaced the previous challenge.        | Discard any previously entered code.                   |
-| `verification.expired`              | The verification or active challenge expired.            | Start a new verification when the user retries.        |
-| `verification.delivery_failed`      | Dugble could not deliver the active challenge.           | Offer another channel or begin a new session.          |
-| `verification.max_attempts_reached` | The configured number of attempts was exhausted.         | Require a new verification session.                    |
-| `verification.canceled`             | The pending verification was canceled.                   | Stop accepting codes for the verification ID.          |
-
-Verify event data is a snapshot of the verification resource. It never contains
-the plaintext code, the stored HMAC, or the encrypted dispatch value.
+| Event | Meaning | Suggested action |
+| --- | --- | --- |
+| `broadcast.scheduled` | A broadcast was scheduled for future delivery. | Reflect the scheduled state in your application. |
+| `broadcast.queued` | A broadcast entered the delivery queue. | Treat delivery fanout as started. |
+| `broadcast.sent` | The broadcast completed its send lifecycle. | Record completion and consume final metrics as needed. |
+| `broadcast.failed` | The broadcast failed. | Surface the failure and inspect operational details. |
+| `broadcast.canceled` | A queued broadcast was canceled. | Stop treating remaining recipients as pending delivery. |
 
 ## Test events
 
-Sending a test from an endpoint creates a `webhook.test` event for that endpoint.
-It uses the common envelope but is not a subscribable lifecycle event.
+Sending a test from an endpoint creates a `webhook.test` event targeted only to
+that endpoint. It uses the canonical envelope with `object_type` set to
+`webhook_endpoint`, but it cannot be included in `subscribed_events`.
 
 ## Delivery headers and signature
 

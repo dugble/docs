@@ -1,0 +1,75 @@
+---
+title: Email Analytics
+description: Understand team-wide email delivery, open, click, and bounce performance.
+---
+
+Use `GET /emails/analytics` to retrieve team-wide email performance across fixed 7-day, 30-day, and 90-day windows.
+
+```bash
+curl --request GET \
+  --url https://api.dugble.com/emails/analytics \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --header "Accept: application/json"
+```
+
+A successful request returns `200 OK`:
+
+```json
+{
+  "success": true,
+  "data": {
+    "object": "email.analytics",
+    "windows": [
+      {
+        "days": 7,
+        "rates": [
+          { "name": "delivery_rate", "value": 0.985 },
+          { "name": "open_rate", "value": 0.452 },
+          { "name": "click_rate", "value": 0.127 },
+          { "name": "bounce_rate", "value": 0.015 }
+        ],
+        "series": [
+          {
+            "date": "2026-08-29",
+            "total": 100,
+            "delivered": 98,
+            "opened": 44,
+            "clicked": 12,
+            "bounced": 2
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Windows
+
+Dugble returns three windows in every response: 7, 30, and 90 days. Each window contains aggregate rates and a daily series covering that window.
+
+## Rates
+
+| Rate | Calculation |
+| --- | --- |
+| `delivery_rate` | delivered / total |
+| `open_rate` | opened / delivered |
+| `click_rate` | clicked / delivered |
+| `bounce_rate` | bounced / total |
+
+When a rate has no applicable denominator, Dugble returns `0`.
+
+## Daily series
+
+Each `series` point contains:
+
+- `date` — calendar date in `YYYY-MM-DD` format
+- `total` — emails counted for the day
+- `delivered` — delivered emails
+- `opened` — emails with an open event
+- `clicked` — emails with a click event
+- `bounced` — bounced emails
+
+<Note>
+Analytics are team-wide aggregates. Use `GET /emails/{message_id}` and the message event endpoint when you need the state or history of one email.
+</Note>

@@ -1,23 +1,23 @@
 ---
 title: "Webhooks overview"
 "sidebarTitle": "Overview"
-description: "Receive event-driven delivery updates for Dugble SMS messages"
+description: "Receive event-driven updates for Dugble messaging and audience resources"
 ---
 
-Webhooks let an application react to SMS lifecycle changes without repeatedly polling the SMS retrieve endpoint.
+Webhooks let an application react to Dugble lifecycle changes without repeatedly polling resource endpoints.
 
 <Warning>
-    Customer-configurable outgoing webhooks are currently a preview. Preview
-    endpoints support the SMS events listed in the event catalog; email events
-    are not emitted yet.
+    Customer-configurable outgoing webhooks are currently a preview. The current
+    subscribable catalog includes Email, SMS, contact, suppression, and
+    broadcast lifecycle events. See the event catalog for the exact event names.
 </Warning>
 
 ## How webhook delivery works
 
 <Steps>
     <Step title="Register an HTTPS endpoint">
-        Add an endpoint in your Dugble team settings and select the events your
-        application needs.
+        Add an endpoint in your Dugble team settings and select one or more
+        supported events your application needs.
     </Step>
     <Step title="Return a successful response quickly">
         Verify and persist the event, return a `2xx` response, and perform slow
@@ -48,21 +48,27 @@ app.post("/webhooks/dugble", async (request, response) => {
         case "sms.delivered":
             await markSmsDelivered(event.data.id);
             break;
+        case "contact.updated":
+            await refreshContact(event.object_id);
+            break;
     }
 
     response.sendStatus(200);
 });
 ```
 
-See the event catalog for the signature header and HMAC input format.
+See the event catalog for the canonical event envelope, supported event types,
+and signature header contract.
 
 <Card title="Verify signatures" icon="key" href="/webhooks/signatures">
     Authenticate requests with the raw body and your endpoint signing secret.
 </Card>
 
-## Current alternative
+## When polling is still useful
 
-For event types not included in the preview, retrieve message state directly:
+Webhooks remove the need for routine polling, but direct resource retrieval is
+still useful for reconciliation or when your application needs the latest full
+resource state:
 
 - `GET /emails/{message_id}` for email
 - `GET /sms/{message_id}` for SMS

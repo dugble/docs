@@ -39,6 +39,26 @@ Endpoint responses include these operational fields:
 | `disabled_reason` | `manual`, `failure_threshold`, or absent while no reason is recorded. |
 | `disabled_at` | Time the endpoint was disabled. |
 
+## Disable versus delete
+
+Disable an endpoint when you want to stop traffic temporarily while preserving
+its configuration and delivery history. Re-enabling it resets the failure
+counter and clears its disable reason.
+
+`DELETE /webhook-endpoints/{endpoint_id}` is different: it permanently removes
+the endpoint and returns `204 No Content` with no response body.
+
+Deletion is a hard delete. Delivery rows reference their endpoint with database
+cascade semantics, so deleting the endpoint also removes that endpoint's
+webhook-delivery records and their delivery-attempt history. The team-level
+webhook event records remain independently stored.
+
+<Warning>
+    Do not delete an endpoint merely to pause delivery or perform receiver
+    maintenance. Disable it instead if you need to preserve endpoint-specific
+    delivery diagnostics and retry history.
+</Warning>
+
 ## Recovery runbook
 
 1. Inspect the latest failed delivery's response status, truncated response

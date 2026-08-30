@@ -63,6 +63,27 @@ Dugble determines whether the message uses GSM-7 or UCS-2 encoding and calculate
 
 Longer messages may use multiple billable segments even though they are submitted through one API request.
 
+## List and filter messages
+
+Use `GET /sms` to retrieve message history. The endpoint supports `limit` and `offset`, plus filters that can be combined:
+
+| Parameter | Description |
+| --- | --- |
+| `status` | Exact normalized SMS status. |
+| `sender` | Exact sender identity matching the message's `from` value. |
+| `start_date` | Include messages created at or after this RFC 3339 timestamp. |
+| `end_date` | Include messages created at or before this RFC 3339 timestamp. Must not precede `start_date`. |
+| `search` | Case-insensitive partial match across recipient, sender, message body, or provider message ID. |
+
+```bash
+curl --get https://api.dugble.com/sms \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --data-urlencode "status=delivered" \
+  --data-urlencode "sender=Dugble" \
+  --data-urlencode "start_date=2026-08-01T00:00:00Z" \
+  --data-urlencode "search=verification"
+```
+
 ## Track a message
 
 ```bash
@@ -85,5 +106,8 @@ The `last_event` field contains the latest normalized delivery state.
   </Card>
   <Card title="Delivery status" icon="signal-bars" href="/sms/delivery-status">
     Interpret normalized delivery states and failures.
+  </Card>
+  <Card title="SMS analytics" icon="chart-line" href="/sms/analytics">
+    Review delivery rates and country-level performance.
   </Card>
 </CardGroup>

@@ -1,54 +1,85 @@
 ---
 title: Broadcasts
-description: Understand how Dugble sends one email message to a reusable audience.
+description: Understand how Dugble sends broadcast-owned email content to a reusable audience.
 ---
 
-Broadcasts let you send one email template to a segment of contacts while Dugble applies audience eligibility rules before delivery.
+Broadcasts let you send one marketing email to a segment of contacts while Dugble applies audience eligibility rules before delivery.
 
-A broadcast connects four things:
+A broadcast owns everything required to send that message:
 
 - a **segment** that defines the starting audience
 - an optional **topic** that applies subscription preferences
-- a **message template** that provides the email content
-- optional **variable bindings** used when rendering the template
+- **sender fields** such as `from_email`, `from_name`, and `reply_to_email`
+- recipient-facing **subject**, preview text, HTML, and optional text content
+- optional **variable bindings** used when rendering placeholders
+
+Reusable message templates are separate resources. The Broadcast API does not accept or persist `template_id` or `template_version_id`. If your application starts from a reusable template, copy the desired template content into the broadcast when you create or update it.
 
 ## Broadcast lifecycle
 
-A new broadcast starts as a `draft`. Drafts can be edited and previewed before sending.
+A new broadcast starts as a `draft`. Drafts can be edited, previewed, sent immediately, or scheduled for later.
 
-When you send immediately, Dugble queues the broadcast for fanout. When you choose a future delivery time, the broadcast moves to `scheduled` first and is queued when that time arrives.
+```text
+draft -- send now --------------------> queued -- complete --> sent
+  |                                       |
+  | schedule                              +-- cancel -------> canceled
+  v
+scheduled -- due ---------------------> queued
+  |
+  +-- cancel schedule ----------------> draft
+  |
+  +-- reschedule ---------------------> scheduled
+```
 
-Broadcast states include:
+The supported states are `draft`, `scheduled`, `queued`, `sent`, `failed`, and `canceled`.
 
-`draft` → `scheduled` → `queued` → `sent`
+Broadcast content and audience settings can be edited while the broadcast is `draft` or `scheduled`. Once it enters `queued`, Dugble uses the broadcast-owned content snapshot for fanout and it can no longer be edited.
 
-A broadcast can also become `failed` or `canceled` depending on the outcome.
+## Owned message content
 
-<Note>
-Only draft broadcasts can be edited or sent. Only scheduled broadcasts can be canceled.
-</Note>
+A broadcast can contain fields such as:
+
+```json
+{
+  "name": "August product update",
+  "segment_id": "0f593c7a-167e-4fe0-aeb8-6be39078d0f0",
+  "topic_id": null,
+  "from_email": "hello@example.com",
+  "from_name": "Dugble",
+  "reply_to_email": "support@example.com",
+  "subject": "What's new this month",
+  "preview_text": "A quick look at what shipped.",
+  "html": "<p>Hello {{{FIRST_NAME}}}</p>",
+  "text": "Hello {{{FIRST_NAME}}}",
+  "variable_bindings": {
+    "FIRST_NAME": "there"
+  }
+}
+```
+
+`segment_id`, `subject`, and `html` are required when creating a broadcast. `name` defaults to the subject when omitted or blank. Sender fields, `topic_id`, preview text, text content, and variable bindings are optional.
+
+## Optimistic concurrency
+
+Broadcasts include a positive `revision`. Updates must send the current revision so concurrent edits do not silently overwrite each other. A successful update increments the revision; using a stale revision returns a conflict.
 
 ## Audience counts
 
 A broadcast tracks audience and fanout totals such as `audience_count`, `eligible_count`, `suppressed_count`, `queued_count`, and `failed_count`.
 
-These counts help distinguish the size of the selected segment from the number of contacts that were actually eligible to receive the message.
-
-## Templates are versioned at send time
-
-A broadcast references a message template while it is a draft. Before sending, the template must have a published version. Dugble records that published version for the broadcast so the send uses a stable template version.
+These counts distinguish the size of the selected segment from the contacts that were actually eligible and successfully handed to email delivery.
 
 <CardGroup cols={2}>
   <Card title="Audience" href="/broadcasts/audience">
     Learn how segment membership, subscriptions, and suppressions affect eligibility.
   </Card>
   <Card title="Sending" href="/broadcasts/sending">
-    Understand previewing, immediate sends, scheduling, and cancellation.
+    Understand previewing, editing, immediate sends, scheduling, cancellation, and duplication.
   </Card>
   <Card title="Analytics" href="/broadcasts/analytics">
     Interpret delivery and engagement metrics for a broadcast.
   </Card>
-  <Card title="Audiences" href="/audiences/overview">
-    Review contacts, topics, subscriptions, segments, and suppressions.
+  <Card title="Templates" href="/templates/introduction">
+    Manage reusable message templates independently from broadcasts.
   </Card>
 </CardGroup>

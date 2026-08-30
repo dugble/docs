@@ -24,6 +24,7 @@
     { "name": "Email", "description": "Send and manage transactional emails." },
     { "name": "SMS", "description": "Send and manage SMS messages." },
     { "name": "Domains", "description": "Manage and verify sending domains." },
+    { "name": "Templates", "description": "Create, version, publish, preview, and test reusable email templates." },
     { "name": "Sender IDs", "description": "Manage SMS sender IDs." },
     { "name": "Contacts", "description": "Manage contacts and their audience memberships." },
     { "name": "Contact Properties", "description": "Manage typed custom property definitions used by contacts." },
@@ -90,7 +91,7 @@
       "post": {
         "operationId": "sendEmailBatch",
         "summary": "Send Batch Emails",
-        "description": "Atomically queues up to 100 emails. Attachments are not supported in batch requests. A top-level array is preferred; an object containing a `messages` array is also accepted.",
+        "description": "Atomically queues up to 50 emails. Attachments are not supported in batch requests. A top-level array is preferred; an object containing a `messages` array is also accepted.",
         "tags": ["Email"],
         "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
         "requestBody": {
@@ -115,6 +116,21 @@
         }
       }
     },
+    "/emails/analytics": {
+      "get": {
+        "operationId": "getEmailAnalytics",
+        "summary": "Get Email Analytics",
+        "description": "Returns team-wide email delivery, open, click, and bounce analytics for fixed 7-day, 30-day, and 90-day windows.",
+        "tags": ["Email"],
+        "responses": {
+          "200": {
+            "description": "Email analytics retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmailAnalyticsEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/emails/{message_id}": {
       "get": {
         "operationId": "getEmail",
@@ -133,7 +149,7 @@
       "patch": {
         "operationId": "updateEmail",
         "summary": "Update Email",
-        "description": "Changes the delivery time of an email that is still queued for scheduled delivery.",
+        "description": "Reschedules a pending scheduled email. The new scheduled_at value must be a future RFC 3339 timestamp.",
         "tags": ["Email"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -141,7 +157,7 @@
         ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScheduleUpdateRequest" } } }
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmailScheduleUpdateRequest" } } }
         },
         "responses": {
           "200": {
@@ -179,7 +195,8 @@
         "tags": ["Email"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
-          { "$ref": "#/components/parameters/LimitOffset" }
+          { "$ref": "#/components/parameters/EventLimit" },
+          { "$ref": "#/components/parameters/Offset" }
         ],
         "responses": {
           "200": {
@@ -198,7 +215,42 @@
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
-          { "$ref": "#/components/parameters/Offset" }
+          { "$ref": "#/components/parameters/Offset" },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by exact normalized SMS status.",
+            "schema": { "type": "string", "enum": ["queued", "processing", "submitted", "sent", "delivered", "undelivered", "rejected", "failed", "expired", "unknown", "canceled"] }
+          },
+          {
+            "name": "sender",
+            "in": "query",
+            "required": false,
+            "description": "Filter by exact sender identity matching the response `from` value.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "description": "Include messages created at or after this RFC 3339 timestamp.",
+            "schema": { "type": "string", "format": "date-time" }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "description": "Include messages created at or before this RFC 3339 timestamp. Must not precede start_date.",
+            "schema": { "type": "string", "format": "date-time" }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Case-insensitive partial match across recipient, sender, body, or provider message ID.",
+            "schema": { "type": "string" }
+          }
         ],
         "responses": {
           "200": {
@@ -246,7 +298,7 @@
       "post": {
         "operationId": "sendSmsBatch",
         "summary": "Send Batch SMS",
-        "description": "Atomically validates, prices, charges, and queues up to 100 SMS messages. A top-level array is preferred; an object containing a `messages` array is also accepted.",
+        "description": "Atomically validates, prices, charges, and queues up to 50 SMS messages. A top-level array is preferred; an object containing a `messages` array is also accepted.",
         "tags": ["SMS"],
         "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
         "requestBody": {
@@ -271,6 +323,21 @@
         }
       }
     },
+    "/sms/analytics": {
+      "get": {
+        "operationId": "getSmsAnalytics",
+        "summary": "Get SMS Analytics",
+        "description": "Returns team-wide SMS delivery analytics for fixed 7-day, 30-day, and 90-day windows plus 90-day delivery totals by destination country.",
+        "tags": ["SMS"],
+        "responses": {
+          "200": {
+            "description": "SMS analytics retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SmsAnalyticsEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/sms/{message_id}": {
       "get": {
         "operationId": "getSmsMessage",
@@ -289,7 +356,7 @@
       "patch": {
         "operationId": "updateSmsMessage",
         "summary": "Update SMS",
-        "description": "Changes the delivery time of an SMS that is still queued for scheduled delivery.",
+        "description": "Reschedules a pending scheduled SMS outside the delivery cutoff. The new scheduled_at value must be a future RFC 3339 timestamp at least 30 seconds ahead.",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -297,7 +364,7 @@
         ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScheduleUpdateRequest" } } }
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SmsScheduleUpdateRequest" } } }
         },
         "responses": {
           "200": {
@@ -312,7 +379,7 @@
       "post": {
         "operationId": "cancelSmsMessage",
         "summary": "Cancel SMS",
-        "description": "Cancels an SMS that is still queued for scheduled delivery.",
+        "description": "Cancels a pending scheduled SMS outside the final 15-second delivery cutoff.",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -335,7 +402,7 @@
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
-          { "$ref": "#/components/parameters/LimitOffset" }
+          { "$ref": "#/components/parameters/EventLimit" }
         ],
         "responses": {
           "200": {
@@ -365,12 +432,262 @@
         }
       }
     },
+    "/templates": {
+      "get": {
+        "operationId": "listTemplates",
+        "summary": "List Templates",
+        "description": "Returns reusable email templates for the authenticated team using limit/offset pagination.",
+        "tags": ["Templates"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TemplateLimit" },
+          { "$ref": "#/components/parameters/TemplateOffset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Templates retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createTemplate",
+        "summary": "Create Template",
+        "description": "Creates a reusable email template and its initial draft version.",
+        "tags": ["Templates"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TemplateCreateRequest" },
+              "example": {
+                "name": "Welcome email",
+                "alias": "welcome-email",
+                "category": "welcome",
+                "from": "Acme <hello@example.com>",
+                "subject": "Welcome, {{{FIRST_NAME}}}",
+                "html": "<h1>Welcome {{{FIRST_NAME}}}</h1>",
+                "variables": [
+                  { "key": "FIRST_NAME_CUSTOM", "type": "string", "fallback_value": "there" }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Template created successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/templates/{template}": {
+      "get": {
+        "operationId": "getTemplate",
+        "summary": "Retrieve Template",
+        "description": "Retrieves a template by UUID or alias, including its current draft content and publish state.",
+        "tags": ["Templates"],
+        "parameters": [{ "$ref": "#/components/parameters/TemplateIdentifier" }],
+        "responses": {
+          "200": {
+            "description": "Template retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateResourceEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "operationId": "updateTemplate",
+        "summary": "Update Template",
+        "description": "Updates template metadata or content and creates a new current draft version.",
+        "tags": ["Templates"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TemplateIdentifier" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Template updated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTemplate",
+        "summary": "Delete Template",
+        "description": "Deletes a reusable email template.",
+        "tags": ["Templates"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TemplateIdentifier" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template deleted successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeleteEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/templates/{template}/publish": {
+      "post": {
+        "operationId": "publishTemplate",
+        "summary": "Publish Template",
+        "description": "Publishes the template's current version. The current version must have a non-empty subject and valid content.",
+        "tags": ["Templates"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TemplateIdentifier" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template published successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/templates/{template}/duplicate": {
+      "post": {
+        "operationId": "duplicateTemplate",
+        "summary": "Duplicate Template",
+        "description": "Duplicates the template's current version into a new draft template. The generated name defaults to the source name plus ' Copy'.",
+        "tags": ["Templates"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TemplateIdentifier" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template duplicated successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/templates/{template}/versions": {
+      "get": {
+        "operationId": "listTemplateVersions",
+        "summary": "List Template Versions",
+        "description": "Returns template versions using limit/offset pagination.",
+        "tags": ["Templates"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TemplateIdentifier" },
+          { "$ref": "#/components/parameters/TemplateLimit" },
+          { "$ref": "#/components/parameters/TemplateOffset" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template versions retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateVersionListEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/templates/{template}/versions/{version_id}": {
+      "get": {
+        "operationId": "getTemplateVersion",
+        "summary": "Retrieve Template Version",
+        "description": "Retrieves a specific immutable template version.",
+        "tags": ["Templates"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TemplateIdentifier" },
+          { "$ref": "#/components/parameters/TemplateVersionId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template version retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateVersionEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/templates/{template}/versions/{version_id}/revert": {
+      "post": {
+        "operationId": "revertTemplateVersion",
+        "summary": "Revert Template Version",
+        "description": "Creates a new current draft version by copying content from the selected historical version.",
+        "tags": ["Templates"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TemplateIdentifier" },
+          { "$ref": "#/components/parameters/TemplateVersionId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template reverted successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateStateEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/templates/{template}/preview": {
+      "post": {
+        "operationId": "previewTemplate",
+        "summary": "Preview Template",
+        "description": "Renders the current or requested template version with optional variable values without sending it.",
+        "tags": ["Templates"],
+        "parameters": [{ "$ref": "#/components/parameters/TemplateIdentifier" }],
+        "requestBody": {
+          "required": false,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplatePreviewRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Template preview rendered successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplatePreviewEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/templates/{template}/test-send": {
+      "post": {
+        "operationId": "testSendTemplate",
+        "summary": "Test Send Template",
+        "description": "Renders the current or requested version and queues a test email to one recipient.",
+        "tags": ["Templates"],
+        "parameters": [
+          { "$ref": "#/components/parameters/TemplateIdentifier" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateTestSendRequest" } } }
+        },
+        "responses": {
+          "202": {
+            "description": "Template test email accepted for delivery.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MutationEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/domains": {
       "get": {
         "operationId": "listDomains",
         "summary": "List Domains",
         "description": "Returns sending domains configured for the authenticated team.",
         "tags": ["Domains"],
+        "parameters": [
+          { "$ref": "#/components/parameters/DomainLimit" },
+          { "$ref": "#/components/parameters/DomainOffset" }
+        ],
         "responses": {
           "200": {
             "description": "Sending domains retrieved successfully.",
@@ -427,6 +744,27 @@
         "responses": {
           "200": {
             "description": "Domain retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "operationId": "updateDomain",
+        "summary": "Update Domain",
+        "description": "Updates mutable configuration for a sending domain. Currently only the TLS mode can be changed.",
+        "tags": ["Domains"],
+        "parameters": [
+          { "$ref": "#/components/parameters/DomainId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain updated successfully.",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainEnvelope" } } }
           },
           "default": { "$ref": "#/components/responses/Error" }
@@ -851,9 +1189,8 @@
         "description": "Returns subscription topics configured for the authenticated team.",
         "tags": ["Topics"],
         "parameters": [
-          { "$ref": "#/components/parameters/CursorLimit" },
-          { "$ref": "#/components/parameters/After" },
-          { "$ref": "#/components/parameters/Before" }
+          { "$ref": "#/components/parameters/TopicLimit" },
+          { "$ref": "#/components/parameters/TopicOffset" }
         ],
         "responses": {
           "200": {
@@ -948,8 +1285,8 @@
         "description": "Returns audience segments belonging to the authenticated team.",
         "tags": ["Segments"],
         "parameters": [
-          { "$ref": "#/components/parameters/LimitOffset" },
-          { "$ref": "#/components/parameters/Offset" }
+          { "$ref": "#/components/parameters/SegmentLimit" },
+          { "$ref": "#/components/parameters/SegmentOffset" }
         ],
         "responses": {
           "200": {
@@ -1011,6 +1348,22 @@
         }
       }
     },
+    "/segments/{segment_id}/audience-size": {
+      "get": {
+        "operationId": "getSegmentAudienceSize",
+        "summary": "Get Segment Audience Size",
+        "description": "Returns the current number of contacts assigned to the segment. This is raw segment membership and does not apply unsubscribe, topic, or suppression eligibility rules.",
+        "tags": ["Segments"],
+        "parameters": [{ "$ref": "#/components/parameters/SegmentId" }],
+        "responses": {
+          "200": {
+            "description": "Segment audience size retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SegmentAudienceSizeEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/segments/{segment_id}/contacts": {
       "get": {
         "operationId": "listSegmentContacts",
@@ -1019,8 +1372,8 @@
         "tags": ["Segments"],
         "parameters": [
           { "$ref": "#/components/parameters/SegmentId" },
-          { "$ref": "#/components/parameters/LimitOffset" },
-          { "$ref": "#/components/parameters/Offset" }
+          { "$ref": "#/components/parameters/SegmentLimit" },
+          { "$ref": "#/components/parameters/SegmentOffset" }
         ],
         "responses": {
           "200": {
@@ -1170,7 +1523,7 @@
       "post": {
         "operationId": "createBroadcast",
         "summary": "Create Broadcast",
-        "description": "Creates a draft broadcast for a segment using a message template.",
+        "description": "Creates a broadcast with its own sender and email content. By default the broadcast is a draft; set send to true to queue immediately or combine send with a future scheduled_at to schedule it.",
         "tags": ["Broadcasts"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "requestBody": {
@@ -1181,7 +1534,13 @@
               "example": {
                 "name": "August product update",
                 "segment_id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
-                "template": "product-update"
+                "from_email": "hello@example.com",
+                "from_name": "Dugble",
+                "subject": "What's new this month",
+                "preview_text": "A quick look at what shipped.",
+                "html": "<p>Hello {{{FIRST_NAME}}}</p>",
+                "text": "Hello {{{FIRST_NAME}}}",
+                "variable_bindings": { "FIRST_NAME": "there" }
               }
             }
           }
@@ -1213,7 +1572,7 @@
       "patch": {
         "operationId": "updateBroadcast",
         "summary": "Update Broadcast",
-        "description": "Updates a draft broadcast. Supply the current revision for optimistic concurrency control.",
+        "description": "Updates a draft or scheduled broadcast. Supply the current revision for optimistic concurrency control; nullable content fields can be cleared with JSON null.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1276,7 +1635,7 @@
       "post": {
         "operationId": "cancelBroadcast",
         "summary": "Cancel Broadcast",
-        "description": "Cancels a broadcast that is currently scheduled for future delivery.",
+        "description": "Cancels active scheduling or execution. Scheduled broadcasts return to draft; queued broadcasts move to canceled and remaining fanout stops.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1295,7 +1654,7 @@
       "post": {
         "operationId": "duplicateBroadcast",
         "summary": "Duplicate Broadcast",
-        "description": "Creates a new draft broadcast using the configuration of an existing broadcast.",
+        "description": "Creates a new draft by copying the source broadcast audience and exact owned message content.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1318,7 +1677,7 @@
       "post": {
         "operationId": "previewBroadcast",
         "summary": "Preview Broadcast",
-        "description": "Renders the broadcast template with optional preview variables without sending it.",
+        "description": "Renders the broadcast-owned subject and body with optional preview variables without sending it.",
         "tags": ["Broadcasts"],
         "parameters": [
           { "$ref": "#/components/parameters/BroadcastId" },
@@ -1402,6 +1761,8 @@
     "parameters": {
       "MessageId": { "name": "message_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "DomainId": { "name": "domain_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "TemplateIdentifier": { "name": "template", "in": "path", "required": true, "description": "Template UUID or alias.", "schema": { "type": "string" } },
+      "TemplateVersionId": { "name": "version_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "SenderId": { "name": "sender_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "ContactId": { "name": "contact_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "ContactPropertyId": { "name": "property_id", "in": "path", "required": true, "description": "Contact property UUID.", "schema": { "type": "string", "format": "uuid" } },
@@ -1428,6 +1789,69 @@
         "required": false,
         "description": "Number of records to skip.",
         "schema": { "type": "integer", "format": "int32", "minimum": 0 }
+      },
+      "TemplateLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of templates or template versions to return. Omitted or non-positive values use 50; values above 100 are capped at 100. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 50 }
+      },
+      "TemplateOffset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Number of templates or template versions to skip. Omitted or negative values use 0. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 0 }
+      },
+      "DomainLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of sender domains to return. Omitted, non-positive, or values above 100 use the default 50. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 50 }
+      },
+      "DomainOffset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Number of sender domains to skip. Omitted or negative values use 0. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 0 }
+      },
+      "TopicLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of topics to return. Omitted, non-positive, or values above 100 use the default 50. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 50 }
+      },
+      "TopicOffset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Number of topics to skip. Omitted or negative values use 0. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 0 }
+      },
+      "SegmentLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of records to return. Omitted or non-positive values use 50; values above 100 are capped at 100. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 50 }
+      },
+      "SegmentOffset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Number of records to skip. Omitted or negative values use 0. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 0 }
+      },
+      "EventLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of message events to return. Defaults to 100; values above 100 use the default.",
+        "schema": { "type": "integer", "format": "int32", "minimum": 1, "maximum": 100, "default": 100 }
       },
       "CursorLimit": {
         "name": "limit",
@@ -1566,18 +1990,17 @@
         "properties": {
           "content": { "type": "string", "contentEncoding": "base64" },
           "filename": { "type": "string" },
-          "path": { "type": "string", "format": "uri" },
           "content_type": { "type": "string" },
           "content_id": { "type": "string" }
         }
       },
       "EmailSendRequest": {
         "type": "object",
-        "required": ["from", "to", "subject"],
+        "required": ["to", "subject"],
         "properties": {
           "from": {
             "$ref": "#/components/schemas/EmailAddress",
-            "default": "Acme <onboarding@dugble.me>"
+            "description": "Optional sender override. When omitted, Dugble resolves the configured default sender."
           },
           "to": { "$ref": "#/components/schemas/EmailAddressOrList" },
           "cc": { "$ref": "#/components/schemas/EmailAddressOrList" },
@@ -1598,7 +2021,7 @@
       "EmailBatchArray": {
         "type": "array",
         "minItems": 1,
-        "maxItems": 100,
+        "maxItems": 50,
         "items": { "$ref": "#/components/schemas/EmailSendRequest" }
       },
       "EmailBatchObject": {
@@ -1606,10 +2029,21 @@
         "required": ["messages"],
         "properties": { "messages": { "$ref": "#/components/schemas/EmailBatchArray" } }
       },
-      "ScheduleUpdateRequest": {
+      "EmailScheduleUpdateRequest": {
         "type": "object",
         "required": ["scheduled_at"],
-        "properties": { "scheduled_at": { "type": "string" } }
+        "properties": {
+          "scheduled_at": { "type": "string", "format": "date-time", "description": "Future RFC 3339 timestamp. Relative scheduling values are not accepted when rescheduling." }
+        },
+        "additionalProperties": false
+      },
+      "SmsScheduleUpdateRequest": {
+        "type": "object",
+        "required": ["scheduled_at"],
+        "properties": {
+          "scheduled_at": { "type": "string", "format": "date-time", "description": "Future RFC 3339 timestamp at least 30 seconds ahead. Relative values are not accepted." }
+        },
+        "additionalProperties": false
       },
       "EmailResource": {
         "type": "object",
@@ -1657,6 +2091,51 @@
         "required": ["success", "data"],
         "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/EmailSummary" } } }
       },
+      "EmailAnalyticsRate": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": { "type": "string", "enum": ["delivery_rate", "open_rate", "click_rate", "bounce_rate"] },
+          "value": { "type": "number", "format": "double", "minimum": 0 }
+        }
+      },
+      "EmailAnalyticsPoint": {
+        "type": "object",
+        "required": ["date", "total", "delivered", "opened", "clicked", "bounced"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "total": { "type": "integer", "format": "int64", "minimum": 0 },
+          "delivered": { "type": "integer", "format": "int64", "minimum": 0 },
+          "opened": { "type": "integer", "format": "int64", "minimum": 0 },
+          "clicked": { "type": "integer", "format": "int64", "minimum": 0 },
+          "bounced": { "type": "integer", "format": "int64", "minimum": 0 }
+        }
+      },
+      "EmailAnalyticsWindow": {
+        "type": "object",
+        "required": ["days", "rates", "series"],
+        "properties": {
+          "days": { "type": "integer", "format": "int32", "enum": [7, 30, 90] },
+          "rates": { "type": "array", "items": { "$ref": "#/components/schemas/EmailAnalyticsRate" } },
+          "series": { "type": "array", "items": { "$ref": "#/components/schemas/EmailAnalyticsPoint" } }
+        }
+      },
+      "EmailAnalytics": {
+        "type": "object",
+        "required": ["object", "windows"],
+        "properties": {
+          "object": { "type": "string", "enum": ["email.analytics"] },
+          "windows": { "type": "array", "items": { "$ref": "#/components/schemas/EmailAnalyticsWindow" } }
+        }
+      },
+      "EmailAnalyticsEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/EmailAnalytics" }
+        }
+      },
       "DeliveryEvent": {
         "type": "object",
         "required": ["id", "type", "occurred_at"],
@@ -1673,7 +2152,7 @@
         "type": "object",
         "required": ["object", "data"],
         "properties": {
-          "object": { "type": "string" },
+          "object": { "type": "string", "enum": ["list"] },
           "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeliveryEvent" } }
         }
       },
@@ -1686,18 +2165,18 @@
         "type": "object",
         "required": ["to", "from", "body"],
         "properties": {
-          "to": { "type": "string", "example": "+233201234567" },
-          "from": { "type": "string", "example": "Dugble" },
-          "body": { "type": "string" },
+          "to": { "type": "string", "pattern": "^[+][1-9][0-9]{7,14}$", "example": "+233201234567", "description": "Supported E.164 destination number." },
+          "from": { "type": "string", "minLength": 1, "maxLength": 11, "example": "Dugble", "description": "Approved sender ID." },
+          "body": { "type": "string", "minLength": 1, "maxLength": 1600 },
           "metadata": { "type": "object", "additionalProperties": true },
-          "scheduled_at": { "type": "string" }
+          "scheduled_at": { "type": "string", "description": "Future RFC 3339 timestamp or supported relative value such as 'in 5 min'. The resolved time must be at least 30 seconds ahead." }
         },
         "additionalProperties": false
       },
       "SmsBatchArray": {
         "type": "array",
         "minItems": 1,
-        "maxItems": 100,
+        "maxItems": 50,
         "items": { "$ref": "#/components/schemas/SmsSendRequest" }
       },
       "SmsBatchObject": {
@@ -1742,6 +2221,60 @@
         "required": ["success", "data"],
         "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SmsResource" } } }
       },
+      "SmsAnalyticsRate": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": { "type": "string", "enum": ["delivery_rate", "failure_rate"] },
+          "value": { "type": "number", "format": "double", "minimum": 0 }
+        }
+      },
+      "SmsAnalyticsPoint": {
+        "type": "object",
+        "required": ["date", "total", "delivered", "failed"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "total": { "type": "integer", "format": "int64", "minimum": 0 },
+          "delivered": { "type": "integer", "format": "int64", "minimum": 0 },
+          "failed": { "type": "integer", "format": "int64", "minimum": 0 }
+        }
+      },
+      "SmsAnalyticsWindow": {
+        "type": "object",
+        "required": ["days", "rates", "series"],
+        "properties": {
+          "days": { "type": "integer", "format": "int32", "enum": [7, 30, 90] },
+          "rates": { "type": "array", "items": { "$ref": "#/components/schemas/SmsAnalyticsRate" } },
+          "series": { "type": "array", "items": { "$ref": "#/components/schemas/SmsAnalyticsPoint" } }
+        }
+      },
+      "SmsCountryAnalytics": {
+        "type": "object",
+        "required": ["country", "total", "delivered", "failed"],
+        "properties": {
+          "country": { "type": "string" },
+          "total": { "type": "integer", "format": "int64", "minimum": 0 },
+          "delivered": { "type": "integer", "format": "int64", "minimum": 0 },
+          "failed": { "type": "integer", "format": "int64", "minimum": 0 }
+        }
+      },
+      "SmsAnalytics": {
+        "type": "object",
+        "required": ["object", "windows", "delivery_by_country"],
+        "properties": {
+          "object": { "type": "string", "enum": ["sms.analytics"] },
+          "windows": { "type": "array", "items": { "$ref": "#/components/schemas/SmsAnalyticsWindow" } },
+          "delivery_by_country": { "type": "array", "maxItems": 25, "items": { "$ref": "#/components/schemas/SmsCountryAnalytics" } }
+        }
+      },
+      "SmsAnalyticsEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/SmsAnalytics" }
+        }
+      },
       "VerificationRecord": {
         "type": "object",
         "required": ["record", "name", "value", "type", "status", "ttl"],
@@ -1755,6 +2288,190 @@
           "priority": { "type": "integer" }
         }
       },
+      "TemplateCategory": {
+        "type": "string",
+        "enum": ["otp", "welcome", "receipt", "alert", "notification", "custom"]
+      },
+      "TemplateVariableInput": {
+        "type": "object",
+        "required": ["key", "type"],
+        "properties": {
+          "key": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]{0,49}$" },
+          "type": { "type": "string", "enum": ["string", "number"] },
+          "fallback_value": {}
+        },
+        "additionalProperties": false
+      },
+      "TemplateReplyToInput": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "array", "items": { "type": "string" } }
+        ]
+      },
+      "TemplateCreateRequest": {
+        "type": "object",
+        "required": ["name", "html", "category"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "html": { "type": "string", "minLength": 1 },
+          "alias": { "type": "string", "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+          "category": { "$ref": "#/components/schemas/TemplateCategory" },
+          "from": { "type": "string", "description": "Email address, optionally with a display name." },
+          "subject": { "type": "string", "maxLength": 255 },
+          "reply_to": { "$ref": "#/components/schemas/TemplateReplyToInput" },
+          "text": { "type": "string" },
+          "variables": { "type": "array", "maxItems": 50, "items": { "$ref": "#/components/schemas/TemplateVariableInput" } }
+        },
+        "additionalProperties": false
+      },
+      "TemplateUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "html": { "type": "string", "minLength": 1 },
+          "alias": { "type": "string", "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+          "category": { "$ref": "#/components/schemas/TemplateCategory" },
+          "from": { "type": "string", "description": "Email address, optionally with a display name." },
+          "subject": { "type": "string", "maxLength": 255 },
+          "reply_to": { "$ref": "#/components/schemas/TemplateReplyToInput" },
+          "text": { "type": "string" },
+          "variables": { "type": "array", "maxItems": 50, "items": { "$ref": "#/components/schemas/TemplateVariableInput" } }
+        },
+        "additionalProperties": false
+      },
+      "TemplateVariableResource": {
+        "type": "object",
+        "required": ["id", "key", "type", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "key": { "type": "string" },
+          "type": { "type": "string", "enum": ["string", "number"] },
+          "fallback_value": {},
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TemplateResource": {
+        "type": "object",
+        "required": ["object", "id", "current_version_id", "name", "category", "created_at", "updated_at", "status", "reply_to", "html", "variables", "has_unpublished_versions"],
+        "properties": {
+          "object": { "type": "string", "enum": ["template"] },
+          "id": { "type": "string", "format": "uuid" },
+          "current_version_id": { "type": "string", "format": "uuid" },
+          "alias": { "type": ["string", "null"] },
+          "name": { "type": "string" },
+          "category": { "$ref": "#/components/schemas/TemplateCategory" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "status": { "type": "string", "enum": ["draft", "published"] },
+          "published_at": { "type": ["string", "null"], "format": "date-time" },
+          "from": { "type": ["string", "null"] },
+          "subject": { "type": ["string", "null"] },
+          "reply_to": { "type": "array", "items": { "type": "string" } },
+          "html": { "type": "string" },
+          "text": { "type": ["string", "null"] },
+          "variables": { "type": "array", "items": { "$ref": "#/components/schemas/TemplateVariableResource" } },
+          "has_unpublished_versions": { "type": "boolean" }
+        }
+      },
+      "TemplateListItem": {
+        "type": "object",
+        "required": ["id", "name", "category", "status", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "category": { "$ref": "#/components/schemas/TemplateCategory" },
+          "status": { "type": "string", "enum": ["draft", "published"] },
+          "published_at": { "type": ["string", "null"], "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "alias": { "type": ["string", "null"] }
+        }
+      },
+      "TemplateList": {
+        "type": "object",
+        "required": ["object", "data", "has_more"],
+        "properties": {
+          "object": { "type": "string", "enum": ["list"] },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/TemplateListItem" } },
+          "has_more": { "type": "boolean" }
+        }
+      },
+      "TemplateVersion": {
+        "type": "object",
+        "required": ["id", "team_id", "template_id", "version_number", "subject", "html", "variables", "created_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "template_id": { "type": "string", "format": "uuid" },
+          "version_number": { "type": "integer", "format": "int32" },
+          "from_email": { "type": "string", "format": "email" },
+          "from_name": { "type": "string" },
+          "reply_to_email": { "type": "string" },
+          "subject": { "type": "string" },
+          "html": { "type": "string" },
+          "text": { "type": "string" },
+          "variables": { "type": "array", "items": { "$ref": "#/components/schemas/TemplateVariableInput" } },
+          "based_on_version_id": { "type": "string", "format": "uuid" },
+          "change_note": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TemplateState": {
+        "type": "object",
+        "required": ["id", "team_id", "name", "category", "has_unpublished_changes", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "team_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "alias": { "type": ["string", "null"] },
+          "category": { "$ref": "#/components/schemas/TemplateCategory" },
+          "current_version_id": { "type": "string", "format": "uuid" },
+          "published_version_id": { "type": "string", "format": "uuid" },
+          "published_at": { "type": "string", "format": "date-time" },
+          "has_unpublished_changes": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TemplatePreviewRequest": {
+        "type": "object",
+        "properties": {
+          "version_id": { "type": "string", "format": "uuid" },
+          "variables": { "type": "object", "additionalProperties": true }
+        },
+        "additionalProperties": false
+      },
+      "TemplatePreview": {
+        "type": "object",
+        "required": ["template_id", "version_id", "subject", "html"],
+        "properties": {
+          "template_id": { "type": "string", "format": "uuid" },
+          "version_id": { "type": "string", "format": "uuid" },
+          "subject": { "type": "string" },
+          "html": { "type": "string" },
+          "text": { "type": "string" },
+          "from_email": { "type": "string", "format": "email" },
+          "from_name": { "type": "string" },
+          "reply_to": { "type": "string" }
+        }
+      },
+      "TemplateTestSendRequest": {
+        "type": "object",
+        "required": ["to"],
+        "properties": {
+          "to": { "type": "string", "format": "email" },
+          "version_id": { "type": "string", "format": "uuid" },
+          "variables": { "type": "object", "additionalProperties": true }
+        },
+        "additionalProperties": false
+      },
+      "TemplateResourceEnvelope": { "type": "object", "required": ["success", "data"], "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/TemplateResource" } } },
+      "TemplateListEnvelope": { "type": "object", "required": ["success", "data"], "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/TemplateList" } } },
+      "TemplateVersionEnvelope": { "type": "object", "required": ["success", "data"], "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/TemplateVersion" } } },
+      "TemplateVersionListEnvelope": { "type": "object", "required": ["success", "data"], "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/TemplateVersion" } } } },
+      "TemplateStateEnvelope": { "type": "object", "required": ["success", "data"], "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/TemplateState" } } },
+      "TemplatePreviewEnvelope": { "type": "object", "required": ["success", "data"], "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/TemplatePreview" } } },
       "DomainCreateRequest": {
         "type": "object",
         "required": ["name", "region"],
@@ -1762,6 +2479,13 @@
           "name": { "type": "string", "maxLength": 253 },
           "region": { "type": "string", "enum": ["us-east-1", "eu-north-1"] },
           "tls": { "type": "string", "enum": ["opportunistic", "enforced"], "default": "opportunistic" }
+        },
+        "additionalProperties": false
+      },
+      "DomainUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "tls": { "type": "string", "enum": ["opportunistic", "enforced"] }
         },
         "additionalProperties": false
       },
@@ -2070,6 +2794,7 @@
       "SegmentCreateRequest": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string", "minLength": 1 } } },
       "SegmentResource": {
         "type": "object",
+        "required": ["id", "team_id", "name", "created_at"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "team_id": { "type": "string", "format": "uuid" },
@@ -2077,8 +2802,25 @@
           "created_at": { "type": "string", "format": "date-time" }
         }
       },
+      "SegmentAudienceSize": {
+        "type": "object",
+        "required": ["segment_id", "count"],
+        "properties": {
+          "segment_id": { "type": "string", "format": "uuid" },
+          "count": { "type": "integer", "format": "int64", "minimum": 0 }
+        }
+      },
+      "SegmentAudienceSizeEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/SegmentAudienceSize" }
+        }
+      },
       "SegmentContact": {
         "type": "object",
+        "required": ["id", "team_id", "email", "unsubscribed", "created_at", "updated_at"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "team_id": { "type": "string", "format": "uuid" },
@@ -2135,13 +2877,21 @@
       "SuppressionBatchRemoveEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/SuppressionBatchRemove" } } },
       "BroadcastCreateRequest": {
         "type": "object",
-        "required": ["name", "segment_id", "template"],
+        "required": ["segment_id", "subject", "html"],
         "properties": {
-          "name": { "type": "string", "minLength": 1 },
+          "name": { "type": "string" },
           "segment_id": { "type": "string", "format": "uuid" },
-          "topic_id": { "type": "string", "format": "uuid" },
-          "template": { "type": "string", "description": "Template identifier accepted by the template service." },
-          "variable_bindings": { "type": "object", "additionalProperties": true }
+          "topic_id": { "type": ["string", "null"], "format": "uuid" },
+          "from_email": { "type": ["string", "null"], "format": "email" },
+          "from_name": { "type": ["string", "null"] },
+          "reply_to_email": { "type": ["string", "null"], "format": "email" },
+          "subject": { "type": "string" },
+          "preview_text": { "type": ["string", "null"] },
+          "html": { "type": "string" },
+          "text": { "type": ["string", "null"] },
+          "variable_bindings": { "type": "object", "additionalProperties": true },
+          "send": { "type": "boolean", "default": false },
+          "scheduled_at": { "type": ["string", "null"], "format": "date-time", "description": "When send is true, a future timestamp schedules delivery instead of queueing immediately." }
         }
       },
       "BroadcastUpdateRequest": {
@@ -2151,16 +2901,23 @@
           "revision": { "type": "integer", "format": "int64", "minimum": 1 },
           "name": { "type": "string" },
           "segment_id": { "type": "string", "format": "uuid" },
-          "topic_id": { "type": "string", "format": "uuid" },
-          "template": { "type": "string" },
-          "variable_bindings": { "type": "object", "additionalProperties": true }
+          "topic_id": { "type": ["string", "null"], "format": "uuid" },
+          "from_email": { "type": ["string", "null"], "format": "email" },
+          "from_name": { "type": ["string", "null"] },
+          "reply_to_email": { "type": ["string", "null"], "format": "email" },
+          "subject": { "type": "string" },
+          "preview_text": { "type": ["string", "null"] },
+          "html": { "type": "string" },
+          "text": { "type": ["string", "null"] },
+          "variable_bindings": { "type": ["object", "null"], "additionalProperties": true }
         }
       },
       "BroadcastSendRequest": { "type": "object", "properties": { "scheduled_at": { "type": "string", "format": "date-time", "description": "Must be in the future." } } },
-      "BroadcastDuplicateRequest": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string", "minLength": 1 } } },
+      "BroadcastDuplicateRequest": { "type": "object", "properties": { "name": { "type": "string" } } },
       "BroadcastPreviewRequest": { "type": "object", "properties": { "variables": { "type": "object", "additionalProperties": true } } },
       "BroadcastResource": {
         "type": "object",
+        "required": ["id", "team_id", "name", "status", "segment_id", "from_email", "subject", "html", "variable_bindings", "audience_count", "eligible_count", "suppressed_count", "queued_count", "failed_count", "revision", "created_at", "updated_at"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "team_id": { "type": "string", "format": "uuid" },
@@ -2168,8 +2925,13 @@
           "status": { "type": "string", "enum": ["draft", "scheduled", "queued", "sent", "failed", "canceled"] },
           "segment_id": { "type": "string", "format": "uuid" },
           "topic_id": { "type": "string", "format": "uuid" },
-          "template_id": { "type": "string", "format": "uuid" },
-          "template_version_id": { "type": "string", "format": "uuid" },
+          "from_email": { "type": "string", "format": "email" },
+          "from_name": { "type": "string" },
+          "reply_to_email": { "type": "string", "format": "email" },
+          "subject": { "type": "string" },
+          "preview_text": { "type": "string" },
+          "html": { "type": "string" },
+          "text": { "type": "string" },
           "variable_bindings": { "type": "object", "additionalProperties": true },
           "scheduled_at": { "type": "string", "format": "date-time" },
           "queued_at": { "type": "string", "format": "date-time" },
@@ -2180,7 +2942,7 @@
           "suppressed_count": { "type": "integer", "format": "int64" },
           "queued_count": { "type": "integer", "format": "int64" },
           "failed_count": { "type": "integer", "format": "int64" },
-          "revision": { "type": "integer", "format": "int64" },
+          "revision": { "type": "integer", "format": "int64", "minimum": 1 },
           "created_at": { "type": "string", "format": "date-time" },
           "updated_at": { "type": "string", "format": "date-time" }
         }
@@ -2231,15 +2993,15 @@
       },
       "BroadcastPreview": {
         "type": "object",
+        "required": ["from_email", "subject", "html"],
         "properties": {
-          "template_id": { "type": "string", "format": "uuid" },
-          "version_id": { "type": "string", "format": "uuid" },
-          "subject": { "type": "string" },
-          "html": { "type": "string" },
-          "text": { "type": "string" },
           "from_email": { "type": "string", "format": "email" },
           "from_name": { "type": "string" },
-          "reply_to": { "type": "string" }
+          "reply_to_email": { "type": "string", "format": "email" },
+          "subject": { "type": "string" },
+          "preview_text": { "type": "string" },
+          "html": { "type": "string" },
+          "text": { "type": "string" }
         }
       },
       "BroadcastEnvelope": { "type": "object", "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "$ref": "#/components/schemas/BroadcastResource" } } },
