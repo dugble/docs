@@ -1,50 +1,69 @@
 ---
 title: Sending
-description: Preview, send, schedule, cancel, and duplicate broadcasts.
+description: Preview, edit, send, schedule, cancel, and duplicate broadcasts.
 ---
 
-Broadcast sending is built around a simple workflow: prepare the draft, preview the rendered content, then send now or schedule delivery for later.
+Broadcast sending is built around a simple workflow: prepare broadcast-owned content, preview the rendered message, then send now or schedule delivery for later.
 
-## Prepare the draft
+## Prepare the broadcast
 
-While a broadcast is in `draft`, you can change its name, segment, topic, template, and variable bindings.
+A broadcast owns its sender and message content. While it is `draft` or `scheduled`, you can update fields such as its name, segment, topic, sender details, subject, preview text, HTML, text, and variable bindings.
 
-Updates use the broadcast `revision` so concurrent changes do not silently overwrite each other. Once the broadcast leaves draft state, it can no longer be edited.
+Updates require the current `revision`. A successful update increments it; a stale revision returns a conflict instead of overwriting another edit.
+
+Reusable templates are separate resources. The Broadcast API does not accept template references. If you want to start from a template, copy the desired template content into the broadcast.
 
 ## Preview before sending
 
-Preview renders the broadcast template with optional preview variables without sending any email.
+Preview renders the broadcast-owned subject, preview text, HTML, and text without queueing a message.
 
-Use preview to confirm the subject, HTML, text content, sender details, and variable rendering before the audience is processed.
+You can provide preview variables that override the broadcast's base `variable_bindings`:
 
-<Note>
-Previewing does not change the broadcast state and does not queue recipients.
-</Note>
+```json
+{
+  "variables": {
+    "FIRST_NAME": "Ada"
+  }
+}
+```
+
+Placeholders use triple braces, such as `{{{FIRST_NAME}}}`. Previewing does not change the broadcast state or materialize recipients.
 
 ## Send now
 
-A broadcast can only be sent from `draft`. The selected message template must have a published version.
+Send a `draft` without a future `scheduled_at` to queue it immediately for asynchronous fanout.
 
-When no future `scheduled_at` is supplied, Dugble queues the broadcast for asynchronous fanout. Recipient eligibility is applied before individual email messages are queued.
+Once the broadcast enters `queued`, its owned content becomes the delivery snapshot and can no longer be edited.
 
-## Schedule a broadcast
+## Schedule or reschedule
 
-Provide a future `scheduled_at` value to schedule the broadcast instead of sending immediately.
+Provide a future `scheduled_at` value to schedule a draft. A broadcast already in `scheduled` can be rescheduled with another future timestamp.
 
-A scheduled broadcast remains cancelable until it begins queueing. Once processing starts, it can no longer be canceled through the scheduled-broadcast cancellation flow.
+Updating other fields on a scheduled broadcast does not remove its schedule.
 
-## Cancel a scheduled broadcast
+## Cancel
 
-Only broadcasts currently in `scheduled` state can be canceled. Canceling prevents the scheduled fanout from starting and moves the broadcast to `canceled`.
+Cancellation depends on the current state:
+
+- `scheduled` → `draft`: clears the schedule so the broadcast can be edited or scheduled again.
+- `queued` → `canceled`: stops remaining fanout work. Messages already handed to email delivery cannot be recalled.
+
+Other states return a conflict.
 
 ## Duplicate for reuse
 
-Duplicating a broadcast creates a new draft based on an existing broadcast. This is useful when the audience, topic, template, or bindings are mostly the same but you want a separate send and lifecycle.
+Duplicating a broadcast creates a new `draft` with the source audience settings and exact owned message content.
 
-The duplicate receives its own name and can be edited independently before sending.
+You may supply a new name. If the name is omitted or blank, Dugble uses `<source name> Copy`.
 
-## After the send starts
+The duplicate is independent of the source and receives its own lifecycle and revision.
 
-Once queued, each eligible recipient has its own delivery lifecycle. Some recipients may queue successfully while others fail during fanout or later experience normal email delivery outcomes such as bounce or complaint.
+## Delete
+
+Only `draft` and `canceled` broadcasts can be deleted. Other lifecycle states must finish or be canceled through the supported flow first.
+
+## After fanout starts
+
+Dugble materializes the audience, applies eligibility rules, and queues an individual email message for each eligible recipient. Recipients can then progress independently through normal email outcomes such as delivery, bounce, complaint, or failure.
 
 Use the broadcast recipient list for per-recipient state and [Analytics](/broadcasts/analytics) for aggregate results.
