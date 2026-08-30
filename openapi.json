@@ -91,7 +91,7 @@
       "post": {
         "operationId": "sendEmailBatch",
         "summary": "Send Batch Emails",
-        "description": "Atomically queues up to 100 emails. Attachments are not supported in batch requests. A top-level array is preferred; an object containing a `messages` array is also accepted.",
+        "description": "Atomically queues up to 50 emails. Attachments are not supported in batch requests. A top-level array is preferred; an object containing a `messages` array is also accepted.",
         "tags": ["Email"],
         "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
         "requestBody": {
@@ -116,6 +116,21 @@
         }
       }
     },
+    "/emails/analytics": {
+      "get": {
+        "operationId": "getEmailAnalytics",
+        "summary": "Get Email Analytics",
+        "description": "Returns team-wide email delivery, open, click, and bounce analytics for fixed 7-day, 30-day, and 90-day windows.",
+        "tags": ["Email"],
+        "responses": {
+          "200": {
+            "description": "Email analytics retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmailAnalyticsEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/emails/{message_id}": {
       "get": {
         "operationId": "getEmail",
@@ -134,7 +149,7 @@
       "patch": {
         "operationId": "updateEmail",
         "summary": "Update Email",
-        "description": "Changes the delivery time of an email that is still queued for scheduled delivery.",
+        "description": "Reschedules a pending scheduled email. The new scheduled_at value must be a future RFC 3339 timestamp.",
         "tags": ["Email"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -142,7 +157,7 @@
         ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScheduleUpdateRequest" } } }
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmailScheduleUpdateRequest" } } }
         },
         "responses": {
           "200": {
@@ -180,7 +195,8 @@
         "tags": ["Email"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
-          { "$ref": "#/components/parameters/LimitOffset" }
+          { "$ref": "#/components/parameters/EventLimit" },
+          { "$ref": "#/components/parameters/Offset" }
         ],
         "responses": {
           "200": {
@@ -199,7 +215,42 @@
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/LimitOffset" },
-          { "$ref": "#/components/parameters/Offset" }
+          { "$ref": "#/components/parameters/Offset" },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by exact normalized SMS status.",
+            "schema": { "type": "string", "enum": ["queued", "processing", "submitted", "sent", "delivered", "undelivered", "rejected", "failed", "expired", "unknown", "canceled"] }
+          },
+          {
+            "name": "sender",
+            "in": "query",
+            "required": false,
+            "description": "Filter by exact sender identity matching the response `from` value.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "description": "Include messages created at or after this RFC 3339 timestamp.",
+            "schema": { "type": "string", "format": "date-time" }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "description": "Include messages created at or before this RFC 3339 timestamp. Must not precede start_date.",
+            "schema": { "type": "string", "format": "date-time" }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Case-insensitive partial match across recipient, sender, body, or provider message ID.",
+            "schema": { "type": "string" }
+          }
         ],
         "responses": {
           "200": {
@@ -247,7 +298,7 @@
       "post": {
         "operationId": "sendSmsBatch",
         "summary": "Send Batch SMS",
-        "description": "Atomically validates, prices, charges, and queues up to 100 SMS messages. A top-level array is preferred; an object containing a `messages` array is also accepted.",
+        "description": "Atomically validates, prices, charges, and queues up to 50 SMS messages. A top-level array is preferred; an object containing a `messages` array is also accepted.",
         "tags": ["SMS"],
         "parameters": [{ "$ref": "#/components/parameters/RequiredIdempotencyKey" }],
         "requestBody": {
@@ -272,6 +323,21 @@
         }
       }
     },
+    "/sms/analytics": {
+      "get": {
+        "operationId": "getSmsAnalytics",
+        "summary": "Get SMS Analytics",
+        "description": "Returns team-wide SMS delivery analytics for fixed 7-day, 30-day, and 90-day windows plus 90-day delivery totals by destination country.",
+        "tags": ["SMS"],
+        "responses": {
+          "200": {
+            "description": "SMS analytics retrieved successfully.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SmsAnalyticsEnvelope" } } }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/sms/{message_id}": {
       "get": {
         "operationId": "getSmsMessage",
@@ -290,7 +356,7 @@
       "patch": {
         "operationId": "updateSmsMessage",
         "summary": "Update SMS",
-        "description": "Changes the delivery time of an SMS that is still queued for scheduled delivery.",
+        "description": "Reschedules a pending scheduled SMS outside the delivery cutoff. The new scheduled_at value must be a future RFC 3339 timestamp at least 30 seconds ahead.",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -298,7 +364,7 @@
         ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScheduleUpdateRequest" } } }
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SmsScheduleUpdateRequest" } } }
         },
         "responses": {
           "200": {
@@ -313,7 +379,7 @@
       "post": {
         "operationId": "cancelSmsMessage",
         "summary": "Cancel SMS",
-        "description": "Cancels an SMS that is still queued for scheduled delivery.",
+        "description": "Cancels a pending scheduled SMS outside the final 15-second delivery cutoff.",
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
@@ -336,7 +402,7 @@
         "tags": ["SMS"],
         "parameters": [
           { "$ref": "#/components/parameters/MessageId" },
-          { "$ref": "#/components/parameters/LimitOffset" }
+          { "$ref": "#/components/parameters/EventLimit" }
         ],
         "responses": {
           "200": {
@@ -1705,6 +1771,13 @@
         "description": "Number of records to skip.",
         "schema": { "type": "integer", "format": "int32", "minimum": 0 }
       },
+      "EventLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of message events to return. Defaults to 100; values above 100 use the default.",
+        "schema": { "type": "integer", "format": "int32", "minimum": 1, "maximum": 100, "default": 100 }
+      },
       "CursorLimit": {
         "name": "limit",
         "in": "query",
@@ -1842,18 +1915,17 @@
         "properties": {
           "content": { "type": "string", "contentEncoding": "base64" },
           "filename": { "type": "string" },
-          "path": { "type": "string", "format": "uri" },
           "content_type": { "type": "string" },
           "content_id": { "type": "string" }
         }
       },
       "EmailSendRequest": {
         "type": "object",
-        "required": ["from", "to", "subject"],
+        "required": ["to", "subject"],
         "properties": {
           "from": {
             "$ref": "#/components/schemas/EmailAddress",
-            "default": "Acme <onboarding@dugble.me>"
+            "description": "Optional sender override. When omitted, Dugble resolves the configured default sender."
           },
           "to": { "$ref": "#/components/schemas/EmailAddressOrList" },
           "cc": { "$ref": "#/components/schemas/EmailAddressOrList" },
@@ -1874,7 +1946,7 @@
       "EmailBatchArray": {
         "type": "array",
         "minItems": 1,
-        "maxItems": 100,
+        "maxItems": 50,
         "items": { "$ref": "#/components/schemas/EmailSendRequest" }
       },
       "EmailBatchObject": {
@@ -1882,10 +1954,21 @@
         "required": ["messages"],
         "properties": { "messages": { "$ref": "#/components/schemas/EmailBatchArray" } }
       },
-      "ScheduleUpdateRequest": {
+      "EmailScheduleUpdateRequest": {
         "type": "object",
         "required": ["scheduled_at"],
-        "properties": { "scheduled_at": { "type": "string" } }
+        "properties": {
+          "scheduled_at": { "type": "string", "format": "date-time", "description": "Future RFC 3339 timestamp. Relative scheduling values are not accepted when rescheduling." }
+        },
+        "additionalProperties": false
+      },
+      "SmsScheduleUpdateRequest": {
+        "type": "object",
+        "required": ["scheduled_at"],
+        "properties": {
+          "scheduled_at": { "type": "string", "format": "date-time", "description": "Future RFC 3339 timestamp at least 30 seconds ahead. Relative values are not accepted." }
+        },
+        "additionalProperties": false
       },
       "EmailResource": {
         "type": "object",
@@ -1933,6 +2016,51 @@
         "required": ["success", "data"],
         "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/EmailSummary" } } }
       },
+      "EmailAnalyticsRate": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": { "type": "string", "enum": ["delivery_rate", "open_rate", "click_rate", "bounce_rate"] },
+          "value": { "type": "number", "format": "double", "minimum": 0 }
+        }
+      },
+      "EmailAnalyticsPoint": {
+        "type": "object",
+        "required": ["date", "total", "delivered", "opened", "clicked", "bounced"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "total": { "type": "integer", "format": "int64", "minimum": 0 },
+          "delivered": { "type": "integer", "format": "int64", "minimum": 0 },
+          "opened": { "type": "integer", "format": "int64", "minimum": 0 },
+          "clicked": { "type": "integer", "format": "int64", "minimum": 0 },
+          "bounced": { "type": "integer", "format": "int64", "minimum": 0 }
+        }
+      },
+      "EmailAnalyticsWindow": {
+        "type": "object",
+        "required": ["days", "rates", "series"],
+        "properties": {
+          "days": { "type": "integer", "format": "int32", "enum": [7, 30, 90] },
+          "rates": { "type": "array", "items": { "$ref": "#/components/schemas/EmailAnalyticsRate" } },
+          "series": { "type": "array", "items": { "$ref": "#/components/schemas/EmailAnalyticsPoint" } }
+        }
+      },
+      "EmailAnalytics": {
+        "type": "object",
+        "required": ["object", "windows"],
+        "properties": {
+          "object": { "type": "string", "enum": ["email.analytics"] },
+          "windows": { "type": "array", "items": { "$ref": "#/components/schemas/EmailAnalyticsWindow" } }
+        }
+      },
+      "EmailAnalyticsEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/EmailAnalytics" }
+        }
+      },
       "DeliveryEvent": {
         "type": "object",
         "required": ["id", "type", "occurred_at"],
@@ -1949,7 +2077,7 @@
         "type": "object",
         "required": ["object", "data"],
         "properties": {
-          "object": { "type": "string" },
+          "object": { "type": "string", "enum": ["list"] },
           "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeliveryEvent" } }
         }
       },
@@ -1962,18 +2090,18 @@
         "type": "object",
         "required": ["to", "from", "body"],
         "properties": {
-          "to": { "type": "string", "example": "+233201234567" },
-          "from": { "type": "string", "example": "Dugble" },
-          "body": { "type": "string" },
+          "to": { "type": "string", "pattern": "^[+][1-9][0-9]{7,14}$", "example": "+233201234567", "description": "Supported E.164 destination number." },
+          "from": { "type": "string", "minLength": 1, "maxLength": 11, "example": "Dugble", "description": "Approved sender ID." },
+          "body": { "type": "string", "minLength": 1, "maxLength": 1600 },
           "metadata": { "type": "object", "additionalProperties": true },
-          "scheduled_at": { "type": "string" }
+          "scheduled_at": { "type": "string", "description": "Future RFC 3339 timestamp or supported relative value such as 'in 5 min'. The resolved time must be at least 30 seconds ahead." }
         },
         "additionalProperties": false
       },
       "SmsBatchArray": {
         "type": "array",
         "minItems": 1,
-        "maxItems": 100,
+        "maxItems": 50,
         "items": { "$ref": "#/components/schemas/SmsSendRequest" }
       },
       "SmsBatchObject": {
@@ -2017,6 +2145,60 @@
         "type": "object",
         "required": ["success", "data"],
         "properties": { "success": { "type": "boolean", "enum": [true] }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/SmsResource" } } }
+      },
+      "SmsAnalyticsRate": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": { "type": "string", "enum": ["delivery_rate", "failure_rate"] },
+          "value": { "type": "number", "format": "double", "minimum": 0 }
+        }
+      },
+      "SmsAnalyticsPoint": {
+        "type": "object",
+        "required": ["date", "total", "delivered", "failed"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "total": { "type": "integer", "format": "int64", "minimum": 0 },
+          "delivered": { "type": "integer", "format": "int64", "minimum": 0 },
+          "failed": { "type": "integer", "format": "int64", "minimum": 0 }
+        }
+      },
+      "SmsAnalyticsWindow": {
+        "type": "object",
+        "required": ["days", "rates", "series"],
+        "properties": {
+          "days": { "type": "integer", "format": "int32", "enum": [7, 30, 90] },
+          "rates": { "type": "array", "items": { "$ref": "#/components/schemas/SmsAnalyticsRate" } },
+          "series": { "type": "array", "items": { "$ref": "#/components/schemas/SmsAnalyticsPoint" } }
+        }
+      },
+      "SmsCountryAnalytics": {
+        "type": "object",
+        "required": ["country", "total", "delivered", "failed"],
+        "properties": {
+          "country": { "type": "string" },
+          "total": { "type": "integer", "format": "int64", "minimum": 0 },
+          "delivered": { "type": "integer", "format": "int64", "minimum": 0 },
+          "failed": { "type": "integer", "format": "int64", "minimum": 0 }
+        }
+      },
+      "SmsAnalytics": {
+        "type": "object",
+        "required": ["object", "windows", "delivery_by_country"],
+        "properties": {
+          "object": { "type": "string", "enum": ["sms.analytics"] },
+          "windows": { "type": "array", "items": { "$ref": "#/components/schemas/SmsAnalyticsWindow" } },
+          "delivery_by_country": { "type": "array", "maxItems": 25, "items": { "$ref": "#/components/schemas/SmsCountryAnalytics" } }
+        }
+      },
+      "SmsAnalyticsEnvelope": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/SmsAnalytics" }
+        }
       },
       "VerificationRecord": {
         "type": "object",
