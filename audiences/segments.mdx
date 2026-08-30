@@ -29,3 +29,68 @@ That separation lets your application keep business targeting independent from m
 Contacts can belong to multiple segments at the same time. Membership is explicit and can be added or removed without changing the contact profile itself.
 
 For endpoint details for creating segments or managing contact membership, see the Segments and Contacts sections in the API Reference.
+
+## Audience size
+
+Use the dedicated audience-size endpoint when you only need the current number of contacts assigned to a segment:
+
+```http
+GET /segments/{segment_id}/audience-size
+```
+
+```bash
+curl --request GET \
+  --url https://api.dugble.com/segments/$SEGMENT_ID/audience-size \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --header "Accept: application/json"
+```
+
+A successful response returns the segment ID and membership count:
+
+```json
+{
+  "success": true,
+  "data": {
+    "segment_id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
+    "count": 1250
+  }
+}
+```
+
+The count represents **segment membership**, not final delivery eligibility. A member may still be globally unsubscribed, opted out of a topic, or suppressed when a broadcast is prepared.
+
+<Note>
+Use `GET /segments/{segment_id}/audience-size` when you only need the size. You do not need to page through the segment's contacts and count them yourself.
+</Note>
+
+## List segments with limit and offset
+
+`GET /segments` uses `limit` and `offset` pagination:
+
+```http
+GET /segments?limit=50&offset=0
+```
+
+The pagination rules are:
+
+- omitted or non-positive `limit` uses `50`,
+- `limit` values above `100` are capped at `100`,
+- omitted or negative `offset` uses `0`,
+- malformed numeric values such as `limit=abc` return a bad-request error.
+
+The response `data` is an array of segments. There is no cursor or `has_more` field for this endpoint.
+
+## List contacts in a segment
+
+`GET /segments/{segment_id}/contacts` uses the same `limit` and `offset` rules:
+
+```bash
+curl --request GET \
+  --url "https://api.dugble.com/segments/$SEGMENT_ID/contacts?limit=100&offset=0" \
+  --header "Authorization: Bearer $DUGBLE_API_KEY" \
+  --header "Accept: application/json"
+```
+
+Each returned contact includes its contact ID, team ID, email, optional first and last name, global email unsubscribe state, and timestamps.
+
+To read the full membership set, continue increasing `offset` by the number of contacts returned until a page contains fewer contacts than the effective limit.
