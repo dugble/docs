@@ -16,16 +16,44 @@ GET /emails/{message_id}/events
 For example:
 
 ```bash
-curl https://api.dugble.com/emails/$MESSAGE_ID/events \
+curl "https://api.dugble.com/emails/$MESSAGE_ID/events?limit=50&offset=0" \
   -H "Authorization: Bearer $DUGBLE_API_KEY" \
   -H "Accept: application/json"
 ```
 
 The response contains the events associated with that message.
 
+## Pagination
+
+Email events use offset pagination:
+
+| Parameter | Description |
+| --- | --- |
+| `limit` | Maximum events to return. Defaults to 100 when omitted, zero, or greater than 100. |
+| `offset` | Number of events to skip. Negative values are treated as 0. |
+
+The event response does not include a `has_more` field. Advance `offset` by the number of events returned when you need the next page.
+
 ## Event data
 
 An event can include a unique event ID, event type, occurrence time, provider, and optional code or message.
+
+```json
+{
+  "success": true,
+  "data": {
+    "object": "list",
+    "data": [
+      {
+        "id": "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794",
+        "type": "delivered",
+        "occurred_at": "2026-08-25T09:00:05Z",
+        "provider": "ses"
+      }
+    ]
+  }
+}
+```
 
 ## Events and message status
 
