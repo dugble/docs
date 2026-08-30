@@ -439,8 +439,8 @@
         "description": "Returns reusable email templates for the authenticated team using limit/offset pagination.",
         "tags": ["Templates"],
         "parameters": [
-          { "$ref": "#/components/parameters/LimitOffset" },
-          { "$ref": "#/components/parameters/Offset" }
+          { "$ref": "#/components/parameters/TemplateLimit" },
+          { "$ref": "#/components/parameters/TemplateOffset" }
         ],
         "responses": {
           "200": {
@@ -584,8 +584,8 @@
         "tags": ["Templates"],
         "parameters": [
           { "$ref": "#/components/parameters/TemplateIdentifier" },
-          { "$ref": "#/components/parameters/LimitOffset" },
-          { "$ref": "#/components/parameters/Offset" }
+          { "$ref": "#/components/parameters/TemplateLimit" },
+          { "$ref": "#/components/parameters/TemplateOffset" }
         ],
         "responses": {
           "200": {
@@ -684,6 +684,10 @@
         "summary": "List Domains",
         "description": "Returns sending domains configured for the authenticated team.",
         "tags": ["Domains"],
+        "parameters": [
+          { "$ref": "#/components/parameters/DomainLimit" },
+          { "$ref": "#/components/parameters/DomainOffset" }
+        ],
         "responses": {
           "200": {
             "description": "Sending domains retrieved successfully.",
@@ -1185,9 +1189,8 @@
         "description": "Returns subscription topics configured for the authenticated team.",
         "tags": ["Topics"],
         "parameters": [
-          { "$ref": "#/components/parameters/CursorLimit" },
-          { "$ref": "#/components/parameters/After" },
-          { "$ref": "#/components/parameters/Before" }
+          { "$ref": "#/components/parameters/TopicLimit" },
+          { "$ref": "#/components/parameters/TopicOffset" }
         ],
         "responses": {
           "200": {
@@ -1786,6 +1789,48 @@
         "required": false,
         "description": "Number of records to skip.",
         "schema": { "type": "integer", "format": "int32", "minimum": 0 }
+      },
+      "TemplateLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of templates or template versions to return. Omitted or non-positive values use 50; values above 100 are capped at 100. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 50 }
+      },
+      "TemplateOffset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Number of templates or template versions to skip. Omitted or negative values use 0. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 0 }
+      },
+      "DomainLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of sender domains to return. Omitted, non-positive, or values above 100 use the default 50. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 50 }
+      },
+      "DomainOffset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Number of sender domains to skip. Omitted or negative values use 0. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 0 }
+      },
+      "TopicLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Maximum number of topics to return. Omitted, non-positive, or values above 100 use the default 50. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 50 }
+      },
+      "TopicOffset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Number of topics to skip. Omitted or negative values use 0. Malformed integers return 400.",
+        "schema": { "type": "integer", "format": "int32", "default": 0 }
       },
       "SegmentLimit": {
         "name": "limit",
