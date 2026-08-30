@@ -45,7 +45,16 @@ Preview a template with variable values before using it in an application workfl
 
 ## Pagination
 
-Template and template-version list endpoints use `limit` and `offset` pagination. `limit` defaults to `50` and is capped at `100`; `offset` defaults to `0`.
+Both `GET /templates` and `GET /templates/{template}/versions` use `limit` and `offset` pagination.
+
+- `limit` defaults to `50` when omitted or non-positive.
+- Values above `100` are capped at `100` by the HTTP handler.
+- `offset` defaults to `0`, and negative values are treated as `0`.
+- Malformed integer values for `limit` or `offset` return `400 Bad Request`.
+
+`GET /templates` returns an object with `data` and `has_more`. The service requests one extra template internally to determine whether another page exists.
+
+`GET /templates/{template}/versions` returns a plain array of versions and does not include `has_more`. For version history, advance `offset` by the number of versions returned and stop when a page contains fewer than the effective limit.
 
 <CardGroup cols={2}>
   <Card title="API Reference" icon="square-terminal" href="/api-reference/introduction">
