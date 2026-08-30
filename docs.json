@@ -140,6 +140,7 @@
               "POST /domains",
               "GET /domains",
               "GET /domains/{domain_id}",
+              "PATCH /domains/{domain_id}",
               "POST /domains/{domain_id}/verify",
               "DELETE /domains/{domain_id}"
             ]
