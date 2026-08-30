@@ -43,6 +43,16 @@ The supported sender-domain configuration is intentionally small:
 
 Tracking settings, receiving capabilities, and custom return-path settings are not customer-configurable sender-domain fields. Unknown JSON fields are rejected by the API.
 
+## Update a sender domain
+
+Use `PATCH /domains/{domain_id}` to change mutable sender-domain configuration. The current backend exposes domain updates through the same sender-domain create permission used for provisioning and verification.
+
+Only fields supported by the public update request should be sent. Provider internals and persistence-only fields are not customer-configurable.
+
+<Note>
+The API reference will be updated in this documentation sync to expose the PATCH operation alongside create, retrieve, verify, and delete.
+</Note>
+
 See [Choosing a Region](/domains/regions) for the supported regions and TLS options.
 
 ## Provisioning
