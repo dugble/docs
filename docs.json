@@ -59,6 +59,12 @@
             ]
           },
           {
+            "group": "Templates",
+            "pages": [
+              "templates/introduction"
+            ]
+          },
+          {
             "group": "Audiences",
             "pages": [
               "audiences/overview",
