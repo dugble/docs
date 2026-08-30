@@ -1,0 +1,57 @@
+---
+title: Templates
+description: Create and manage reusable email templates independently from broadcasts.
+---
+
+Templates are reusable email content resources for workflows that want a named, versioned message definition.
+
+Templates are separate from broadcasts. A broadcast owns the exact content it sends and does not store template references. If you want to use a template as the starting point for a broadcast, resolve the desired template content first and copy it into the Broadcast API request.
+
+## Categories
+
+Every template has a category. Supported values are:
+
+- `otp`
+- `welcome`
+- `receipt`
+- `alert`
+- `notification`
+- `custom`
+
+`category` is required when creating a template and can be changed when updating one.
+
+## Template content
+
+A template can include:
+
+- `name` and optional `alias`
+- `category`
+- sender fields such as `from` and `reply_to`
+- `subject`
+- `html` and optional `text`
+- typed variables with optional fallback values
+
+Supported variable types are currently `string` and `number`.
+
+## Versions and publishing
+
+Templates keep versions so content can evolve without losing previous definitions. You can list versions, retrieve a specific version, publish the current template, and revert to an earlier version.
+
+Publishing is a template lifecycle operation. It is not part of the broadcast send path.
+
+## Preview and test send
+
+Preview a template with variable values before using it in an application workflow. You can also issue a test send to a specific recipient without creating a broadcast.
+
+## Pagination
+
+Template and template-version list endpoints use `limit` and `offset` pagination. `limit` defaults to `50` and is capped at `100`; `offset` defaults to `0`.
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="square-terminal" href="/api-reference/introduction">
+    Explore the template endpoints, request bodies, and responses.
+  </Card>
+  <Card title="Broadcasts" icon="bullhorn" href="/broadcasts/overview">
+    Learn how broadcast-owned content differs from reusable templates.
+  </Card>
+</CardGroup>
