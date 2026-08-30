@@ -216,6 +216,7 @@
               "POST /segments",
               "GET /segments",
               "GET /segments/{segment_id}",
+              "GET /segments/{segment_id}/audience-size",
               "GET /segments/{segment_id}/contacts",
               "DELETE /segments/{segment_id}"
             ]
