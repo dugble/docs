@@ -21,10 +21,17 @@ jobs:
           python-version: '3.12'
       - name: Update and validate OpenAPI
         run: |
-          if ! python scripts/sync_messaging_openapi.py; then
-            nl -ba openapi.json | sed -n '2088,2098p'
-            exit 1
-          fi
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/sync_messaging_openapi.py")
+          text = path.read_text()
+          text = text.replace(
+              '"pattern": "^\\\\+[1-9]\\\\d{7,14}$"',
+              '"pattern": "^[+][1-9][0-9]{7,14}$"',
+          )
+          path.write_text(text)
+          PY
+          python scripts/sync_messaging_openapi.py
           python -m json.tool openapi.json >/dev/null
       - name: Commit generated OpenAPI
         run: |
